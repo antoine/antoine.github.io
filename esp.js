@@ -152,17 +152,20 @@ function ESPSystem() {
         var colour = currentValue ("linkColour");
         var currentlyOnLeft = currentValue ("leftIG");
         var currentlyOnRight = currentValue ("rightIG");
-        //making sure the lower group is always on the left to facilitate later matching
-        links.push ({colour:colour, 
-                     lower:(currentlyOnLeft<currentlyOnRight?currentlyOnLeft:currentlyOnRight), 
-                     higher:(currentlyOnLeft < currentlyOnRight?currentlyOnRight:currentlyOnLeft)}); 
+        var linkOkToBeAdded = false;
         //merge-forcesplit files
         if (colour === 'WL' || colour === 'MRL') {
             //merge
-            mergeFile(currentlyOnLeft, currentlyOnRight);
+            linkOkToBeAdded = mergeFile(currentlyOnLeft, currentlyOnRight);
         } else if (colour === 'NMRL' || colour === 'GL') {
             //forcesplit
-            keepInDifferentFiles(currentlyOnLeft, currentlyOnRight);
+            linkOkToBeAdded = keepInDifferentFiles(currentlyOnLeft, currentlyOnRight);
+        }
+        if (linkOkToBeAdded) {
+            //making sure the lower group is always on the left to facilitate later matching
+            links.push ({colour:colour, 
+                        lower:(currentlyOnLeft<currentlyOnRight?currentlyOnLeft:currentlyOnRight), 
+                        higher:(currentlyOnLeft < currentlyOnRight?currentlyOnRight:currentlyOnLeft)}); 
         }
 
         show("linksShowroom", links);
@@ -174,17 +177,23 @@ function ESPSystem() {
         var leftIfId = (fileOfGroup (leftIG));
         var rightIfId = (fileOfGroup (rightIG));
         if (leftIfId === rightIfId) {
-            log(leftIG +" and "+rightIG+" are already in the same file "+leftIfId+" nothing to do");
+            log(leftIG +" and "+rightIG+" are already in the same file "+leftIfId+" nothing to do, but links is created");
         } else {
-            //TODO check excluded groups
             //merging right onto left
             var leftFile = files.get(leftIfId);
-            files.get(rightIfId).groups.forEach(function(group) {
+            var rightFile = files.get(rightIfId);
+            //merging groups, sure
+            rightFile.groups.forEach(function(group) {
                 leftFile.groups.push(group);
+            });
+            //but also collecting the exclusions from the merged group
+            rightFile.excludedGroups.forEach(function(excludedGroup) {
+                leftFile.excludedGroups.push(excludedGroup);
             });
 
             files.delete(rightIfId);
         }
+        return true;
 
 
     }
@@ -211,7 +220,20 @@ function ESPSystem() {
 
 
     var keepInDifferentFiles = function(leftIG, rightIG) {
-        loge("keepInDifferentFiles not implemented");
+        var leftIfId = (fileOfGroup (leftIG));
+        var rightIfId = (fileOfGroup (rightIG));
+        if (leftIfId === rightIfId) {
+            loge(leftIG +" and "+rightIG+" are already in the same file "+leftIfId+", they cannot be kept in different files anymore. ");
+            return false;
+        } else {
+            //TODO not checking for duplicates yet
+            var leftFile = files.get(leftIfId);
+            leftFile.excludedGroups.push(rightIG);
+            var rightFile = files.get(rightIfId);
+            rightFile.excludedGroups.push(leftIG);
+        }
+        return true;
+
     }
 
     var currentValue = function(selectId) {
@@ -226,6 +248,7 @@ function ESPSystem() {
         var currentlyOnLeft = currentValue ("leftIG");
         var currentlyOnRight = currentValue ("rightIG");
         if (ifdef(currentlyOnLeft) && ifdef(currentlyOnRight)) {
+            //links are always created with the lower ig id first
             var lowerIgId = (currentlyOnLeft < currentlyOnRight?currentlyOnLeft:currentlyOnRight);
             var higherIgId = (currentlyOnLeft < currentlyOnRight?currentlyOnRight:currentlyOnLeft);
 
@@ -248,6 +271,29 @@ function ESPSystem() {
                 }
             });
 
+            //checking to see if non-merging links are possible
+            var leftIfId = (fileOfGroup (currentlyOnLeft));
+            var rightIfId = (fileOfGroup (currentlyOnRight));
+            var leftFile = files.get(leftIfId);
+            leftFile.groups.every(function(group) {
+                if (group.IGID == currentlyOnRight) {
+                    //remove non merging links to groups already in the same file.
+                    canHaveNMRL = false;
+                    canHaveGL = false;
+                    return false;
+                } else {
+                    return true;
+                }
+
+            });
+
+            //now checking to see if merging links are possible
+            var rightFile = files.get(rightIfId);
+            if (!areMergingLinksPossible(leftFile, rightFile) || !areMergingLinksPossible(rightFile, leftFile)) {
+                        canHaveMRL = false;
+                        canHaveWL = false;
+            }
+
             addColourIfPossible(canHaveWL, 'White', 'WL', select);
             addColourIfPossible(canHaveMRL, 'Merging red', 'MRL', select);
             addColourIfPossible(canHaveNMRL, 'Non merging red', 'NMRL', select);
@@ -258,6 +304,21 @@ function ESPSystem() {
         }
 
     };
+
+    var areMergingLinksPossible = function(aFile, anotherFile) {
+        var possible = true;
+                aFile.excludedGroups.every(function(leftExcludedGroup) {
+                    anotherFile.groups.every(function(rightGroup) {
+                        if (leftExcludedGroup == rightGroup.IGID) {
+                            possible = false;
+                        }
+                        return possible;
+                    });
+                    //for every() contract
+                    return possible;
+                });
+        return possible;
+    }
 
     var addColourIfPossible = function(possible, text, value, select) {
         if (possible) {
