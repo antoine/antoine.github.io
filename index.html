@@ -21,43 +21,20 @@
 
       <ul class="nav nav-tabs mt-2" id="myTab" role="tablist">
         <li class="nav-item" role="presentation">
-          <button
-            class="nav-link active"
-            id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button"
-            role="tab" aria-controls="home" aria-selected="true" >
-           build your MID! 
+          <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true" >
+           build your data! 
           </button>
-        </li>
-        <!--
+          </li>
         <li class="nav-item" role="presentation">
-          <button
-            class="nav-link"
-            id="profile-tab"
-            data-bs-toggle="tab"
-            data-bs-target="#profile"
-            type="button"
-            role="tab"
-            aria-controls="profile"
-            aria-selected="false"
-          >
-            Config
+          <button class="nav-link" id="queryMID-tab" data-bs-toggle="tab" data-bs-target="#queryMID" type="button" role="tab" aria-controls="queryMID" aria-selected='false' >
+           query your MID! 
           </button>
         </li>
         <li class="nav-item" role="presentation">
-          <button
-            class="nav-link"
-            id="contact-tab"
-            data-bs-toggle="tab"
-            data-bs-target="#contact"
-            type="button"
-            role="tab"
-            aria-controls="contact"
-            aria-selected="false"
-          >
-            Data
+          <button class="nav-link" id="queryCIR-tab" data-bs-toggle="tab" data-bs-target="#queryCIR" type="button" role="tab" aria-controls="queryCIR" aria-selected='false' >
+           query your CIR! 
           </button>
         </li>
-        -->
       </ul>
 
       <div class="tab-content" id="myTabContent">
@@ -67,7 +44,11 @@
             <!--
               <textarea class="form-control" rows="20" id="query"></textarea>
               -->
-              <p> <button type="button" id="addIGButton" class="btn btn-primary mt-1" >
+            <p>
+              <!-- TODO add system button -->
+
+              <!-- TODO add system select for IG -->
+              <button type="button" id="addIGButton" class="btn btn-primary mt-1" >
                 add IG! 
               </button> </p>
 
@@ -77,155 +58,63 @@
               and IG
               <select id="rightIG"></select>
               add a 
-              <select id="linkColour">
-                <!--
-                  <option value="WL">White</option>
-                  <option value="GL">Green</option>
-                  <option value="MRL">Merging red</option>
-                  <option value="NMRL">Non-merging red</option>
-                  <option value="YL">Yellow</option>
-                -->
-              </select>
+              <select id="linkColour"></select>
               link 
               <button type="button" id="addLinkButton" class="btn btn-primary mt-1" > add link </button>
               </p>
             </div>
           </div>
-          <div class="row mt-1">
-            <div class="col-6">
-              <span id="groupsShowroom"></span>
-            </div>
-            <div class="col-6">
-              <span id="linksShowroom"></span>
-              <p id="visible_console"></p>
-            </div>
-          </div>
         </div>
-        <!--
-        <div
-          class="tab-pane fade"
-          id="profile"
-          role="tabpanel"
-          aria-labelledby="profile-tab"
-        >
+        <div class="tab-pane fade " id="queryMID" role="tabpanel" aria-labelledby="queryMID-tab" >
           <div class="row mt-1">
-            <div class="col-3">
-              <h2>ESP</h2>
-            </div>
-            <div class="col-9">
-              <textarea
-                class="form-control"
-                id="esp_config"
-                rows="20"
-              ></textarea>
-            </div>
-          </div>
-          <div class="row mt-1">
-            <div class="col-3">
-              <h2>CIR</h2>
-            </div>
-            <div class="col-9">
-              <textarea
-                class="form-control"
-                rows="10"
-                id="cir_config"
-              ></textarea>
-            </div>
-          </div>
-          <div class="row mt-1">
-            <div class="col-3">
-              <h2>BDP1</h2>
-            </div>
-            <div class="col-9">
-              <textarea
-                class="form-control"
-                rows="10"
-                id="bdp1_config"
-              ></textarea>
-            </div>
-          </div>
-          <div class="row mt-1">
-            <div class="col-3">
-              <h2>BDP2</h2>
-            </div>
-            <div class="col-9">
-              <textarea
-                class="form-control"
-                rows="10"
-                id="bdp2_config"
-              ></textarea>
-            </div>
-          </div>
-        </div>
-        <div
-          class="tab-pane fade"
-          id="contact"
-          role="tabpanel"
-          aria-labelledby="contact-tab"
-        >
-          <div class="row mt-1">
-            <div class="col-5">
-              <h2>CIR</h2>
+            <div class="col-12">
               <p>
-                The following part of the structure returned by each data provider participating in the MID process (so excluding the external databases) is known to the ESP as its interpretation is required
+              get me link 
+              <select id="queriedLink"></select>
+              using ESP profile for 
+              <select id="ESP profiles">
+                <option value="YLR1">YLR - 1<sup>st</sup> step</option>
+                <option value="YLR2">YLR - 2<sup>nd</sup> step</option>
+                <option value="RL">Red link</option>
+                <option value="R1">Rectification - 1<sup>st</sup> step</option>
+                <option value="R2">Rectification - 2<sup>nd</sup> step</option>
+              </select>
+              as the verifying authority  
+              <input type="checkbox" id="asVerifierOfTheLink" checked/>
+              <br>
+              By the way, it does so happen that I have access to the following systems
+              <select id="systemsAccess" multiple></select>
+              <br>
+              <button type="button" id="LMFquery" class="btn btn-primary mt-1" >fetch!</button>
               </p>
-              <pre><code class='small'>[
-  {
-    owner: "XXX",
-    owner_group_reference: "YYY",
-    items: [
-      {
-        owner_identity_reference: "ZZZ",
-        data: {} 
-      }
-    ]
-  }
-]</code></pre>
-            </div>
-            <div class="col-7">
-              <textarea class="form-control" rows="30" id="cir_data"></textarea>
             </div>
           </div>
+        </div>
+        <div class="tab-pane fade " id="queryCIR" role="tabpanel" aria-labelledby="queryCIR-tab" >
           <div class="row mt-1">
-            <div class="col-3">
-              <h2>MID</h2>
-            </div>
-            <div class="col-9">
-              <textarea
-                class="form-control"
-                rows="10"
-                id="mid_data"
-              ></textarea>
+            <div class="col-12">
+              <p>
+              I have access to the following systems
+              <select id="systemsAccessCIR" multiple></select>
+              get me groups   
+              <select id="queriedGroups" multiple></select>
+              
+              <br>
+              <button type="button" id="DMFquery" class="btn btn-primary mt-1" >fetch!</button>
+              </p>
             </div>
           </div>
-          <div class="row mt-1">
-            <div class="col-3">
-              <h2>BDP1</h2>
-            </div>
-            <div class="col-9">
-              <textarea
-                class="form-control"
-                rows="10"
-                id="bdp1_data"
-              ></textarea>
-            </div>
+        </div>
+        <div class="row mt-1">
+          <div class="col-6">
+            <span id="groupsShowroom"></span>
           </div>
-          <div class="row mt-1">
-            <div class="col-3">
-              <h2>BDP2</h2>
-            </div>
-            <div class="col-9">
-              <textarea
-                class="form-control"
-                rows="10"
-                id="bdp2_data"
-              ></textarea>
-            </div>
+          <div class="col-6">
+            <span id="linksShowroom"></span>
+            <p id="visible_console"></p>
           </div>
         </div>
       </div>
-    -->
-    </div>
     <!-- Optional JavaScript; choose one of the two! -->
 
     <!-- Option 1: Bootstrap Bundle with Popper -->

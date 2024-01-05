@@ -91,6 +91,7 @@ function ESPSystem() {
 
 
     this.addIG = function(buttonId) {
+        //define system for each IG, remove IG frm same system
         files.set(    
             nextIFID,{ 
                 ifid:nextIFID,
@@ -223,7 +224,9 @@ function ESPSystem() {
         var leftIfId = (fileOfGroup (leftIG));
         var rightIfId = (fileOfGroup (rightIG));
         if (leftIfId === rightIfId) {
+            //TODO this should never happen though, since we exclude the link outright, should this (and the boolean) remain?
             loge(leftIG +" and "+rightIG+" are already in the same file "+leftIfId+", they cannot be kept in different files anymore. ");
+            
             return false;
         } else {
             //TODO not checking for duplicates yet
