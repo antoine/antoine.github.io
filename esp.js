@@ -80,8 +80,8 @@ function setQuery(id, json) {
 }
 
 //ESP executor
-//function ESPSystem(config, systems) {
-function ESPSystem() {
+//function CMDSystem(config, systems) {
+function CMDSystem() {
 
     var nextIGID = 0;
     var nextIFID = 0;
@@ -344,23 +344,27 @@ function ESPSystem() {
     };
 }
 
+function ESPSystem() {
+    //query the CMD using various ESP profiles and entry points
+}
 
-var esp = new ESPSystem();
+
+var cmd = new CMDSystem();
 //init add IG button
-idget("addIGButton").innerHTML= "add IG " + esp.getNextIGIDForButton();
+idget("addIGButton").innerHTML= "add IG " + cmd.getNextIGIDForButton();
 
 doOnClick("addIGButton", function () {
-    esp.addIG("addIGButton");
+    cmd.addIG("addIGButton");
 });
 
 doOnClick("addLinkButton", function () {
-    esp.addLink();
+    cmd.addLink();
 });
 
 idget("leftIG").onchange = function() {
-    esp.leftIGChosen();
+    cmd.leftIGChosen();
 };
 
 idget("rightIG").onchange = function() {
-    esp.rightIGChosen();
+    cmd.rightIGChosen();
 };
