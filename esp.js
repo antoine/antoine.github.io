@@ -83,28 +83,57 @@ function setQuery(id, json) {
 //function CMDSystem(config, systems) {
 function CMDSystem() {
 
+    var nextSystemID = 0;
     var nextIGID = 0;
     var nextIFID = 0;
+    var nextLinkID= 0;
     var files= new Map();
     var links = [];
+    var systems = [];
+
+    this.addSystem = function(buttonId) {
+        //define system for each IG, remove IG frm same system
+        systems.push(nextSystemID);
+        refreshSystemsOfGroupList();
+        show("systemsShowroom", systems);
+        nextSystemID++;
+        idget(buttonId).innerHTML= "add system " + nextSystemID;
+    };
+
+    var refreshSystemsOfGroupList = function() {
+        var select = idget("systemOfGroup");
+        cleanSelect(select); 
+        systems.forEach(function(system) {
+            var systemOption = document.createElement("option"); 
+            systemOption.text = system;
+            select.add(systemOption);
+        });
+    };
 
 
 
     this.addIG = function(buttonId) {
+        var selectedSystem = currentValue ("systemOfGroup");
+        if (ifdef(selectedSystem)) { 
         //define system for each IG, remove IG frm same system
         files.set(    
             nextIFID,{ 
                 ifid:nextIFID,
-                groups: [{IGID:nextIGID}], 
+                groups: [{
+                    IGID:nextIGID,
+                    EUISID:selectedSystem
+                }], 
                 excludedGroups: []
             });
         refreshLeftIGList();
         refreshRightIGList();
         refreshLinkColoursList();
+        show("systemsShowroom", systems);
         show("groupsShowroom", files);
         nextIGID ++;
         nextIFID ++;
-        idget(buttonId).innerHTML= "add IG " + nextIGID;
+        idget(buttonId).innerHTML= "add identity group " + nextIGID;
+        }
     };
 
     var refreshLeftIGList = function() {
@@ -122,11 +151,13 @@ function CMDSystem() {
     var refreshRightIGList = function() {
         var currentlyOnLeft = currentValue ("leftIG");
         var select = idget("rightIG");
+        var leftGroup = group(currentlyOnLeft);
         cleanSelect(select); 
         files.forEach(function(file) {
             file.groups.forEach(function(freeGroup) {
 
-                if (freeGroup.IGID != currentlyOnLeft) {
+                if (freeGroup.IGID != currentlyOnLeft && 
+                    freeGroup.EUISID != leftGroup.EUISID) {
                     var groupOption = document.createElement("option"); 
                     groupOption.text = freeGroup.IGID;
                     select.add(groupOption);
@@ -135,6 +166,9 @@ function CMDSystem() {
         });
     };
 
+    this.getNextSystemIDForButton = function() {
+        return nextSystemID;
+    };
 
     this.getNextIGIDForButton = function() {
         return nextIGID;
@@ -153,7 +187,7 @@ function CMDSystem() {
         var colour = currentValue ("linkColour");
         var currentlyOnLeft = currentValue ("leftIG");
         var currentlyOnRight = currentValue ("rightIG");
-        var linkOkToBeAdded = false;
+        var linkOkToBeAdded = false;//WARN if removing the boolean it protects against adding non-existing link colour too
         //merge-forcesplit files
         if (colour === 'WL' || colour === 'MRL') {
             //merge
@@ -164,11 +198,13 @@ function CMDSystem() {
         }
         if (linkOkToBeAdded) {
             //making sure the lower group is always on the left to facilitate later matching
-            links.push ({colour:colour, 
-                        lower:(currentlyOnLeft<currentlyOnRight?currentlyOnLeft:currentlyOnRight), 
-                        higher:(currentlyOnLeft < currentlyOnRight?currentlyOnRight:currentlyOnLeft)}); 
+            links.push ({ID: nextLinkID,
+                         colour:colour, 
+                         lower:(currentlyOnLeft<currentlyOnRight?currentlyOnLeft:currentlyOnRight), 
+                         higher:(currentlyOnLeft < currentlyOnRight?currentlyOnRight:currentlyOnLeft)}); 
         }
 
+        show("systemsShowroom", systems);
         show("linksShowroom", links);
         show("groupsShowroom", files);
         refreshLinkColoursList();
@@ -196,16 +232,35 @@ function CMDSystem() {
         }
         return true;
 
-
     }
 
-    var fileOfGroup= function(group) {
+    var group = function(groupID) {
+        var foundGroup;
+
+        files.forEach(function(file, ifid) {
+            if ( !ifdef(foundGroup)) {
+                file.groups.every(function(freeGroup ) {
+                    if (freeGroup.IGID == groupID) {
+                        foundGroup = freeGroup;
+                        return false;
+
+                    } else {
+                        return true;}
+                });
+            }
+        });
+
+
+        return foundGroup;
+    }
+
+    var fileOfGroup= function(groupID) {
         var foundIfid;
 
         files.forEach(function(file, ifid) {
             if ( !ifdef(foundIfid)) {
                 file.groups.every(function(freeGroup ) {
-                    if (freeGroup.IGID == group) {
+                    if (freeGroup.IGID == groupID) {
                         foundIfid = ifid;
                         return false;
 
@@ -224,7 +279,7 @@ function CMDSystem() {
         var leftIfId = (fileOfGroup (leftIG));
         var rightIfId = (fileOfGroup (rightIG));
         if (leftIfId === rightIfId) {
-            //TODO this should never happen though, since we exclude the link outright, should this (and the boolean) remain?
+            //TODO this should never happen though, since we exclude the link outright, should this (and the returned boolean) remain?
             loge(leftIG +" and "+rightIG+" are already in the same file "+leftIfId+", they cannot be kept in different files anymore. ");
             
             return false;
@@ -343,15 +398,32 @@ function CMDSystem() {
         return groups;
     };
 }
-
-function ESPSystem() {
+function ESPSystem(cmd) {
+    
     //query the CMD using various ESP profiles and entry points
+    var refreshLinksList = function() {
+        var select = idget("queriedLink"); 
+        cleanSelect(select); 
+        files.forEach(function(file) {
+            file.groups.forEach(function(freeGroup) {
+                var groupOption = document.createElement("option"); 
+                groupOption.text = freeGroup.IGID;
+                select.add(groupOption);
+            });
+        });
+    };
 }
 
 
 var cmd = new CMDSystem();
 //init add IG button
-idget("addIGButton").innerHTML= "add IG " + cmd.getNextIGIDForButton();
+idget("addIGButton").innerHTML= "add identity group " + cmd.getNextIGIDForButton();
+
+idget("addSystemButton").innerHTML= "add system " + cmd.getNextSystemIDForButton();
+
+doOnClick("addSystemButton", function () {
+    cmd.addSystem("addSystemButton");
+});
 
 doOnClick("addIGButton", function () {
     cmd.addIG("addIGButton");
