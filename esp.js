@@ -5,6 +5,12 @@
 function idget(id) {
     return document.getElementById(id);
 }
+function cleanSelect(select) {
+    var i, L = select.options.length - 1;
+    for(i = L; i >= 0; i--) {
+        select.remove(i);
+    }
+}
 
 function tojson(ob) {
     return JSON.stringify(ob, function (key, value) {
@@ -32,6 +38,34 @@ function show(showroom, name, data) {
             "</code></pre></p>" ;
     }
 }
+
+function JSONStringifyReplacer(key, value) {
+    if(value instanceof Map) {
+        return {
+            dataType: 'Map',
+            value: Array.from(value.entries()), // or with spread: value: [...value]
+        };
+    } else if(value instanceof Set) {
+        return {
+            dataType: 'Set',
+            value: Array.from(value.values()), // or with spread: value: [...value]
+        };
+    } else {
+        return value;
+    }
+    
+}
+
+function JSONStringifyReviver(key, value) {
+    if(typeof value === 'object' && value !== null) {
+    if (value.dataType === 'Map') {
+      return new Map(value.value);
+    } else if (value.dataType === 'Set') {
+        return new Set(value.value);
+    }
+  }
+  return value;
+}
 function log(data) {
     console.log(data);
     visiblelog(data, false);
@@ -51,6 +85,12 @@ function visiblelog(data) {
 function ifdef(o) {
     return typeof o !== 'undefined';
 }
+    function currentValue(selectId) {
+        var select= idget(selectId);
+        if (select.selectedIndex>=0) {
+            return select.options[select.selectedIndex].value;
+        }
+    }
 function uuidv4() {
     //from http://stackoverflow.com/questions/105034/ddg#2117523
     return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
@@ -207,6 +247,7 @@ function CMDSystem() {
         show("systemsShowroom", "systems", systems);
         show("linksShowroom", "links", links);
         show("groupsShowroom", "individual files", files);
+        refreshRightIGList();
         refreshLinkColoursList();
     };
 
@@ -294,12 +335,6 @@ function CMDSystem() {
 
     }
 
-    var currentValue = function(selectId) {
-        var select= idget(selectId);
-        if (select.selectedIndex>=0) {
-            return select.options[select.selectedIndex].value;
-        }
-    };
 
     var refreshLinkColoursList= function() {
         //we need to know the IF to ensure no consistent issue is created
@@ -387,17 +422,88 @@ function CMDSystem() {
         }
     };
 
-    var cleanSelect = function (select) {
-        var i, L = select.options.length - 1;
-        for(i = L; i >= 0; i--) {
-            select.remove(i);
-        }
-    };
 
     this.getIGs = function() {
         return groups;
     };
+
+    this.jsonRepresentation = function() {
+        return JSON.stringify({
+            nextSystemID :nextSystemID,
+            nextIGID: nextIGID,
+            nextIFID: nextIFID,
+            nextLinkID: nextLinkID,
+            files:files,
+            systems:systems,
+            links:links}, JSONStringifyReplacer);
+    };
+
+    this.reloadWith = function(rawState) {
+        var state = JSON.parse(rawState, JSONStringifyReviver);
+        files = state.files;
+        systems = state.systems;
+        links = state.links;
+            nextSystemID = state.nextSystemID;
+            nextIGID= state.nextIGID;
+            nextIFID= state.nextIFID;
+            nextLinkID= state.nextLinkID;
+
+        show("systemsShowroom", "systems", systems);
+        show("linksShowroom", "links", links);
+        show("groupsShowroom", "individual files", files);
+        refreshLeftIGList();
+        refreshRightIGList();
+        refreshLinkColoursList();
+        idget("addSystemButton").innerHTML= "add system " + nextSystemID;
+        idget("addIGButton").innerHTML= "add identity group " + nextIGID;
+
+    };
 }
+
+function StorageSystem(cmd) {
+
+    var localstorage_entry_point = "LS_CMD_STATES";
+
+    this.saveState = function (inputName, selectToRefreshName) {
+        var stateName= idget(inputName); 
+        localStorage.setItem(stateName.value, cmd.jsonRepresentation());
+        saveStateName(stateName.value);
+        this.refreshStatesList(selectToRefreshName);
+    };
+
+    var saveStateName= function(name) {
+        var statesNames = getStatesList();
+        statesNames.add(name);
+        localStorage.setItem(localstorage_entry_point, JSON.stringify(statesNames, JSONStringifyReplacer));
+    };
+
+    var getStatesList = function() {
+        //returns a Set
+        if (localStorage.getItem(localstorage_entry_point) == null ) {
+            localStorage.setItem(localstorage_entry_point, JSON.stringify(new Set(), JSONStringifyReplacer));
+        }
+        return JSON.parse(localStorage.getItem(localstorage_entry_point), JSONStringifyReviver);
+    };
+
+    this.refreshStatesList = function (selectName) {
+        var select = idget (selectName);
+        cleanSelect(select); 
+        var statesNames = getStatesList();
+        statesNames.forEach(function(stateName) {
+
+                var option = document.createElement("option"); 
+                option.text = stateName;
+                select.add(option);
+        });
+    };
+
+    this.loadData = function(selectWithStateToLoadName, idOfInputToSaveState) {
+        var stateToLoad = currentValue(selectWithStateToLoadName);
+        cmd.reloadWith(localStorage.getItem(stateToLoad));
+        idget(idOfInputToSaveState).value = stateToLoad;
+    };
+}
+
 function ESPSystem(cmd) {
     
     //query the CMD using various ESP profiles and entry points
@@ -416,6 +522,10 @@ function ESPSystem(cmd) {
 
 
 var cmd = new CMDSystem();
+var esp = new ESPSystem(cmd);
+var storage = new StorageSystem(cmd);
+
+storage.refreshStatesList("selectedSavedState");
 //init add IG button
 idget("addIGButton").innerHTML= "add identity group " + cmd.getNextIGIDForButton();
 
@@ -423,6 +533,14 @@ idget("addSystemButton").innerHTML= "add system " + cmd.getNextSystemIDForButton
 
 doOnClick("addSystemButton", function () {
     cmd.addSystem("addSystemButton");
+});
+
+doOnClick("saveData", function () {
+    storage.saveState("stateName", "selectedSavedState");
+});
+
+doOnClick("loadData", function () {
+    storage.loadData("selectedSavedState", "stateName");
 });
 
 doOnClick("addIGButton", function () {
@@ -440,3 +558,5 @@ idget("leftIG").onchange = function() {
 idget("rightIG").onchange = function() {
     cmd.rightIGChosen();
 };
+
+
