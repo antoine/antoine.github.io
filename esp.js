@@ -22,12 +22,12 @@ function jsonfrom(id) {
 function doOnClick(id, dowhat) {
     idget(id).onclick = dowhat;
 }
-function show(showroom, data) {
+function show(showroom, name, data) {
     if (typeof data === "string" || data instanceof String) {
-        idget(showroom).innerHTML = "<p>" + data + "</p>";
+        idget(showroom).innerHTML = "<p>"+name+"</p><p>" + data + "</p>";
     } else {
         idget(showroom).innerHTML =
-            "<p><pre><code class='small'>" +
+            "<p>"+name+"</p><p><pre><code class='small'>" +
             tojson(data) +
             "</code></pre></p>" ;
     }
@@ -95,7 +95,7 @@ function CMDSystem() {
         //define system for each IG, remove IG frm same system
         systems.push(nextSystemID);
         refreshSystemsOfGroupList();
-        show("systemsShowroom", systems);
+        show("systemsShowroom", "systems", systems);
         nextSystemID++;
         idget(buttonId).innerHTML= "add system " + nextSystemID;
     };
@@ -128,8 +128,8 @@ function CMDSystem() {
         refreshLeftIGList();
         refreshRightIGList();
         refreshLinkColoursList();
-        show("systemsShowroom", systems);
-        show("groupsShowroom", files);
+            show("systemsShowroom", "systems", systems);
+            show("groupsShowroom", "individual files", files);
         nextIGID ++;
         nextIFID ++;
         idget(buttonId).innerHTML= "add identity group " + nextIGID;
@@ -204,9 +204,9 @@ function CMDSystem() {
                          higher:(currentlyOnLeft < currentlyOnRight?currentlyOnRight:currentlyOnLeft)}); 
         }
 
-        show("systemsShowroom", systems);
-        show("linksShowroom", links);
-        show("groupsShowroom", files);
+        show("systemsShowroom", "systems", systems);
+        show("linksShowroom", "links", links);
+        show("groupsShowroom", "individual files", files);
         refreshLinkColoursList();
     };
 
