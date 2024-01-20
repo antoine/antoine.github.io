@@ -105,9 +105,10 @@
               </select>
               as the verifying authority  
               <input type="checkbox" id="asVerifierOfTheLink" checked/>
-              <br>
+              </p>
+              <p>
               By the way, it does so happen that I have access to the following systems
-              <select id="systemsAccess" multiple></select>
+              <span id="systemsListForMIDQuery"></span>
               <br>
               <button type="button" id="LMFquery" class="btn btn-primary mt-1" >fetch!</button>
               </p>
@@ -129,6 +130,9 @@
             </div>
           </div>
         </div>
+        <div>
+          <hr>
+          Current state:
         <div class="row mt-1">
           <div class="col-4 showdown">
             <span id="systemsShowroom"></span>
@@ -139,6 +143,7 @@
           <div class="col-4 showdown" style="border-left: 1px solid grey;">
             <span id="linksShowroom"></span>
             <p id="visible_console"></p>
+          </div>
           </div>
         </div>
       </div>

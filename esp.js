@@ -148,6 +148,7 @@ function CMDSystem() {
             systemOption.text = system;
             select.add(systemOption);
         });
+        refreshSystemsListForMIDQuery();
     };
 
 
@@ -242,6 +243,8 @@ function CMDSystem() {
                          colour:colour, 
                          lower:(currentlyOnLeft<currentlyOnRight?currentlyOnLeft:currentlyOnRight), 
                          higher:(currentlyOnLeft < currentlyOnRight?currentlyOnRight:currentlyOnLeft)}); 
+            nextLinkID++;
+
         }
 
         show("systemsShowroom", "systems", systems);
@@ -249,6 +252,32 @@ function CMDSystem() {
         show("groupsShowroom", "individual files", files);
         refreshRightIGList();
         refreshLinkColoursList();
+        refreshQueriableLinksList();
+        
+    };
+
+    var refreshSystemsListForMIDQuery= function() {
+        var span = idget("systemsListForMIDQuery");
+        span.innerHTML = '';
+
+        systems.forEach(function(system) {
+            var option = document.createElement("div"); 
+            option.className = 'form-check form-switch';
+            option.innerHTML = '<input class="form-check-input" type="checkbox" role="switch" id="system'+system+'MIDQueryOption"> <label class="form-check-label" for="system'+system+'MIDQueryOption">'+system+'</label>';
+            span.appendChild(option);
+
+        });
+        
+    };
+    var refreshQueriableLinksList = function() {
+        var select = idget("queriedLink"); 
+        cleanSelect(select); 
+        links.forEach(function(link) {
+            var option = document.createElement("option"); 
+            option.text = link.ID; 
+            option.value =  link.ID;
+            select.add(option);
+        });
     };
 
     var mergeFile = function(leftIG, rightIG) {
@@ -454,6 +483,8 @@ function CMDSystem() {
         refreshLeftIGList();
         refreshRightIGList();
         refreshLinkColoursList();
+        refreshQueriableLinksList();
+        refreshSystemsListForMIDQuery();
         idget("addSystemButton").innerHTML= "add system " + nextSystemID;
         idget("addIGButton").innerHTML= "add identity group " + nextIGID;
 
@@ -506,18 +537,6 @@ function StorageSystem(cmd) {
 
 function ESPSystem(cmd) {
     
-    //query the CMD using various ESP profiles and entry points
-    var refreshLinksList = function() {
-        var select = idget("queriedLink"); 
-        cleanSelect(select); 
-        files.forEach(function(file) {
-            file.groups.forEach(function(freeGroup) {
-                var groupOption = document.createElement("option"); 
-                groupOption.text = freeGroup.IGID;
-                select.add(groupOption);
-            });
-        });
-    };
 }
 
 
