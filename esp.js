@@ -236,6 +236,9 @@ function CMDSystem() {
         } else if (colour === 'NMRL' || colour === 'GL') {
             //forcesplit
             linkOkToBeAdded = keepInDifferentFiles(currentlyOnLeft, currentlyOnRight);
+        } else if (colour === 'YL') {
+            //ideally check that rule of prevalence of link assigned to different authority are valid
+            linkOkToBeAdded = true;
         }
         if (linkOkToBeAdded) {
             //making sure the lower group is always on the left to facilitate later matching
@@ -489,6 +492,57 @@ function CMDSystem() {
         idget("addIGButton").innerHTML= "add identity group " + nextIGID;
 
     };
+
+    this.getLink = function(linkID) {
+        var foundLink;
+        links.every(function(link) {
+            if (link.ID == linkID) {
+                foundLink = link;
+                return false;
+            } else {
+                return true;
+            }
+                
+        });
+        return foundLink;
+    };
+
+    this.getRelationOf = function(link) {
+        var linksInSameRelation = [];
+        links.forEach(function(observedLink) {
+            if (observedLink.lower == link.lower && observedLink.higher == link.higher) {
+                linksInSameRelation.push(observedLink);
+            }
+                
+        });
+        return linksInSameRelation;
+    };
+
+    this.getGroup = function(groupID) {
+        return group(groupID);
+    }
+}
+
+
+function ESPSystem(cmd) {
+    this.fetchLink = function() {
+        var querytype = currentValue("LMFQueryTypes");
+        if (querytype == 'YLR1') {
+
+            var queriedLink = currentValue("queriedLink");
+            var link = cmd.getLink(queriedLink);
+            show("MIDQueryResult",
+                 "matches",
+                 {
+                     links: cmd.getRelationOf(link),
+                     lowerGroup: cmd.getGroup(link.lower),
+                     higherGroup: cmd.getGroup(link.higher)
+                 }
+                );
+        } else {
+            loge("querytype "+querytype+" not yet supported"); 
+        }
+    };
 }
 
 function StorageSystem(cmd) {
@@ -535,11 +589,6 @@ function StorageSystem(cmd) {
     };
 }
 
-function ESPSystem(cmd) {
-    
-}
-
-
 var cmd = new CMDSystem();
 var esp = new ESPSystem(cmd);
 var storage = new StorageSystem(cmd);
@@ -568,6 +617,10 @@ doOnClick("addIGButton", function () {
 
 doOnClick("addLinkButton", function () {
     cmd.addLink();
+});
+
+doOnClick("LMFquery", function () {
+    esp.fetchLink();
 });
 
 idget("leftIG").onchange = function() {
