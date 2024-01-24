@@ -119,10 +119,9 @@ function setQuery(id, json) {
     });
 }
 
-//ESP executor
-//function CMDSystem(config, systems) {
 function CMDSystem() {
 
+    //data structure
     var nextSystemID = 0;
     var nextIGID = 0;
     var nextIFID = 0;
@@ -130,6 +129,10 @@ function CMDSystem() {
     var files= new Map();
     var links = [];
     var systems = [];
+
+    //managing the buttons allowing the manipulation of state
+    //constraints are checked when populating the form, thus constraints are (well, should not be) not checked when adding
+    //data, as constraints are assumed not to be possible because the form content was built to prevent them.
 
     this.addSystem = function(buttonId) {
         //define system for each IG, remove IG frm same system
@@ -228,6 +231,7 @@ function CMDSystem() {
         var colour = currentValue ("linkColour");
         var currentlyOnLeft = currentValue ("leftIG");
         var currentlyOnRight = currentValue ("rightIG");
+        //the exception to not checking for constraints after the fact
         var linkOkToBeAdded = false;//WARN if removing the boolean it protects against adding non-existing link colour too
         //merge-forcesplit files
         if (colour === 'WL' || colour === 'MRL') {
@@ -287,6 +291,7 @@ function CMDSystem() {
         var leftIfId = (fileOfGroup (leftIG));
         var rightIfId = (fileOfGroup (rightIG));
         if (leftIfId === rightIfId) {
+            //this should never arrise, and is the only reason for post-constraint checking.
             log(leftIG +" and "+rightIG+" are already in the same file "+leftIfId+" nothing to do, but links is created");
         } else {
             //merging right onto left
@@ -363,7 +368,6 @@ function CMDSystem() {
             var rightFile = files.get(rightIfId);
             rightFile.excludedGroups.push(leftIG);
         }
-        return true;
 
     }
 
@@ -459,6 +463,8 @@ function CMDSystem() {
         return groups;
     };
 
+    //managing local and external storage options
+
     this.jsonRepresentation = function() {
         return JSON.stringify({
             nextSystemID :nextSystemID,
@@ -493,6 +499,8 @@ function CMDSystem() {
 
     };
 
+    //managing queries
+
     this.getLink = function(linkID) {
         var foundLink;
         links.every(function(link) {
@@ -525,24 +533,58 @@ function CMDSystem() {
 
 
 function ESPSystem(cmd) {
-    this.fetchLink = function() {
+    this.fetchLink = function() { 
         var querytype = currentValue("LMFQueryTypes");
+        var motivations = [];
         if (querytype == 'YLR1') {
+            //if not verifying authority then the profile cannot be used
+            if (!idget("asVerifierOfTheLink").checked) {
+                respondWith("error");
+                motivations.push( "YLR1 QT cannot be used without being the verifying authority");
+            } else {
 
             var queriedLink = currentValue("queriedLink");
             var link = cmd.getLink(queriedLink);
-            show("MIDQueryResult",
-                 "matches",
-                 {
-                     links: cmd.getRelationOf(link),
+            //TODO we should only load the relation if the link is actually yellow! 
+                var linksToReturn = [];
+                if (link.colour == "YL") {
+                    linksToReturn.push (cmd.getRelationOf(link));
+                    motivations.push("link "+link.ID+" is currently yellow, full relationship is returned.");
+                } else {
+                    linksToReturn.push (link);
+                    motivations.push("link "+link.ID+" is "+link.colour+", but you are using a YLR query type so it shouldn't work but you were the verifying authority so it does. Only the full relationship is not returned since the link is not yellow anymore.");
+                }
+
+            respondWith({
+                     links: linksToReturn,
                      lowerGroup: cmd.getGroup(link.lower),
                      higherGroup: cmd.getGroup(link.higher)
                  }
                 );
+            //if system access then run DMF query (+linked matches again) on the basis of the groups found
+            }
+            
         } else {
-            loge("querytype "+querytype+" not yet supported"); 
+                respondWith("error");
+            motivations.push("querytype "+querytype+" not yet supported"); 
         }
+        motivateResponseWith(motivations);
     };
+
+    var respondWith= function(value) {
+            show("MIDQueryResult", "response", value);
+    };
+
+    var motivateResponseWith = function(motivations) {
+        var list = "<p>Motivations:<li>";
+        motivations.forEach(function(motivation) {
+            list+="<ul>"+motivation+"</ul>";
+        });
+        list += "</li></p>";
+        idget("MIDQueryMotivations").innerHTML = list; 
+    };
+
+
 }
 
 function StorageSystem(cmd) {
