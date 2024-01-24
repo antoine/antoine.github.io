@@ -35,11 +35,13 @@
            query your MID! 
           </button>
         </li>
+        <!--
         <li class="nav-item" role="presentation">
           <button class="nav-link" id="queryCIR-tab" data-bs-toggle="tab" data-bs-target="#queryCIR" type="button" role="tab" aria-controls="queryCIR" aria-selected='false' >
            query your CIR! 
           </button>
         </li>
+        -->
       </ul>
 
       <div class="tab-content" id="myTabContent">
@@ -97,21 +99,22 @@
               <select id="queriedLink"></select>
               using ESP profile for 
               <select id="LMFQueryTypes">
-                <option value="YLR1">YLR - 1<sup>st</sup> step</option>
-                <option value="YLR2">YLR - 2<sup>nd</sup> step</option>
+                <option value="YLR1">YLR - 1st step</option>
+                <option value="YLR2">YLR - 2nd step</option>
+                <!--
                 <option value="RL">Red link</option>
                 <option value="R1">Rectification - 1<sup>st</sup> step</option>
                 <option value="R2">Rectification - 2<sup>nd</sup> step</option>
+                -->
               </select>
               as the verifying authority  
               <input type="checkbox" id="asVerifierOfTheLink" checked/>
               </p>
-              <p>
+              <p style="display:none;">
               By the way, it does so happen that I have access to the following systems
               <span id="systemsListForMIDQuery"></span>
-              <br>
-              <button type="button" id="LMFquery" class="btn btn-primary mt-1" >fetch!</button>
               </p>
+              <button type="button" id="LMFquery" class="btn btn-primary mt-1" >fetch!</button>
             </div>
           </div>
         <div class="row mt-1">
@@ -154,6 +157,7 @@
           </div>
           </div>
         </div>
+      </div>
       </div>
     <!-- Optional JavaScript; choose one of the two! -->
 
