@@ -5,7 +5,14 @@ const marginTop = 20;
 const marginRight = 20;
 const marginBottom = 30;
 const marginLeft = 40;
-const groupsColors = ["#7018d3", "#6c4f00", "#f98517", "#00603d", "#680000", "#002f64"];
+const groupsColors = [
+  "#7018d3",
+  "#6c4f00",
+  "#f98517",
+  "#00603d",
+  "#680000",
+  "#002f64",
+];
 
 var canvas = document.createElement("canvas");
 canvas.style.background = "#eee"; // a valid CSS colour.
@@ -93,6 +100,7 @@ function graphThis(data) {
       }
 
       if (linkData.colour == "YL") {
+        //more contrasty yellow
         context.strokeStyle = "#fefe33";
       } else if (linkData.colour == "WL") {
         context.strokeStyle = "white";
@@ -106,6 +114,8 @@ function graphThis(data) {
       context.stroke();
     }
 
+    //will collect the coordinates of each group in the same IF so as to draw
+    //bounding circle
     var individualFiles = new Map();
 
     for (const d of nodes) {
@@ -142,10 +152,9 @@ function graphThis(data) {
       var circle = makeCircle(coordsOfGroupsOfFile);
       context.lineWidth = 1;
       context.beginPath();
-      //context.moveTo(d.x + 3, d.y);
       context.arc(circle.x, circle.y, circle.r + 20, 0, 2 * Math.PI);
-      context.strokeStyle = "#3ca1c3";
-      context.stroke();
+      //context.strokeStyle = "#3ca1c3";
+      //context.stroke();
       context.fillStyle = "#ADD8E6";
       context.fill();
     });
@@ -240,7 +249,9 @@ function arcPoints(a, b, r_frac, n) {
     bAngle += 2 * Math.PI;
   }
 
-  let sampledPoints = d3.range(aAngle, bAngle, (bAngle - aAngle) / n).map((d) => [Math.cos(d) * r + c[0], Math.sin(d) * r + c[1]]);
+  let sampledPoints = d3
+    .range(aAngle, bAngle, (bAngle - aAngle) / n)
+    .map((d) => [Math.cos(d) * r + c[0], Math.sin(d) * r + c[1]]);
   //console.log(sampledPoints, b);
   return sampledPoints;
 }

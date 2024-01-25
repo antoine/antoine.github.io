@@ -130,7 +130,8 @@ function CMDSystem() {
   //data, as constraints are assumed not to be possible because the form content was built to prevent them.
 
   this.addSystem = function (buttonId) {
-    //TODO manage per system colour
+    //TODO show per system colour in the select -> need to use emojis and their
+    //limitations in terms of colours... https://blog.jim-nielsen.com/2021/styling-select-option-values/
     systems.push(nextSystemID);
     refreshSystemsOfGroupList();
     show("systemsShowroom", "systems", systems);
