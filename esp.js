@@ -631,17 +631,35 @@ function CMDSystem() {
     const graphNodes = [];
     const graphLinks = [];
 
-    links.forEach(function (link) {
-      graphLinks.push({
-        source: link.lower,
-        target: link.higher,
-        colour: link.colour,
+    var nodeI = 0;
+    files.forEach(function (file, ifid) {
+      file.groups.forEach(function (group) {
+        graphNodes.push({ index: nodeI++, IGID: group.IGID, file: ifid });
       });
     });
 
-    files.forEach(function (file, ifid) {
-      file.groups.forEach(function (group) {
-        graphNodes.push({ index: group.IGID, file: ifid });
+    function getIndexOfIG(IGID, nodes) {
+      var indexFound;
+      nodes.every(function (node, index) {
+        if (node.IGID == IGID) {
+          indexFound = index;
+          return false;
+        } else {
+          return true;
+        }
+      });
+      return indexFound;
+    }
+
+    links.forEach(function (link) {
+      graphLinks.push({
+        /*
+        source: link.lower,
+        target: link.higher,
+        */
+        source: getIndexOfIG(link.lower, graphNodes),
+        target: getIndexOfIG(link.higher, graphNodes),
+        colour: link.colour,
       });
     });
 

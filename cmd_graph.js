@@ -87,7 +87,7 @@ function graphThis(data) {
       context.fillStyle = "white";
       context.textAlign = "center";
       context.textBaseline = "middle";
-      context.fillText(nodeData.index, d.x, d.y);
+      context.fillText(nodeData.IGID, d.x, d.y);
 
       if (individualFiles.has(nodeData.file)) {
         individualFiles.get(nodeData.file).push({ x: d.x, y: d.y });
@@ -118,7 +118,6 @@ function graphThis(data) {
     .forceSimulation(nodes)
     .force("charge", d3.forceManyBody().strength(-30))
     //center is not working yet
-    // .force("center", d3.forceCenter(width / 4, height / 4).strength(0.05))
     .force(
       "link",
       d3
@@ -144,6 +143,8 @@ function graphThis(data) {
         })
         .iterations(10),
     )
+    // .force("center", d3.forceCenter(0, 0).strength(1))
+    //    .force( "collision", d3.forceCollide().radius(function (d) { return d.radius; }),)
     .on("tick", ticked);
 
   const drag = d3
