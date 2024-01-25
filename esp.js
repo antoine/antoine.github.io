@@ -1,34 +1,16 @@
-//"use strict";
+"use strict";
 //console.log("as");
 
 function idget(id) {
   return document.getElementById(id);
 }
-function cleanSelect(select) {
-  var i,
-    L = select.options.length - 1;
-  for (i = L; i >= 0; i--) {
-    select.remove(i);
-  }
-}
 
-function tojson(ob) {
-  return JSON.stringify(
-    ob,
-    function (key, value) {
-      if (value instanceof Map) {
-        return Array.from(value.entries()); // or with spread: value: [...value]
-      } else {
-        return value;
-      }
-    },
-    2,
-  );
-}
 
+/*
 function jsonfrom(id) {
   return JSON.parse(idget(id).value);
 }
+*/
 function doOnClick(id, dowhat) {
   idget(id).onclick = dowhat;
 }
@@ -38,6 +20,11 @@ function show(showroom, name, data) {
   } else {
     idget(showroom).innerHTML = "<p>" + name + "</p><p><pre><code class='small'>" + tojson(data) + "</code></pre></p>";
   }
+}
+
+//STATE serizalition
+function tojson(ob) {
+  return JSON.stringify(ob, JSONStringifyReplacer, 2,);
 }
 
 function JSONStringifyReplacer(key, value) {
@@ -66,6 +53,36 @@ function JSONStringifyReviver(key, value) {
   }
   return value;
 }
+
+function ifdef(o) {
+  return typeof o !== "undefined";
+}
+
+//form elements manipulation
+function currentValue(selectId) {
+  var select = idget(selectId);
+  if (select.selectedIndex >= 0) {
+    return select.options[select.selectedIndex].value;
+  }
+}
+function cleanSelect(select) {
+  var i,
+    L = select.options.length - 1;
+  for (i = L; i >= 0; i--) {
+    select.remove(i);
+  }
+}
+/*
+function uuidv4() {
+  //from http://stackoverflow.com/questions/105034/ddg#2117523
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    var r = (Math.random() * 16) | 0,
+      v = c == "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+*/
+
 function log(data) {
   console.log(data);
   visiblelog(data, false);
@@ -81,25 +98,6 @@ function loge(data) {
 function visiblelog(data) {
   visiblelog(data, false);
 }
-
-function ifdef(o) {
-  return typeof o !== "undefined";
-}
-function currentValue(selectId) {
-  var select = idget(selectId);
-  if (select.selectedIndex >= 0) {
-    return select.options[select.selectedIndex].value;
-  }
-}
-function uuidv4() {
-  //from http://stackoverflow.com/questions/105034/ddg#2117523
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
-    var r = (Math.random() * 16) | 0,
-      v = c == "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
-
 function visiblelog(data, returnedToESPUser) {
   //no error marker yet
   if (typeof data === "string" || data instanceof String) {
@@ -109,11 +107,14 @@ function visiblelog(data, returnedToESPUser) {
       (returnedToESPUser ? " <div class='row mt-1'> <div class='col-1 bg-success' > </div><div class='col-11'>" : "") + "<p><pre><code class='small'>" + tojson(data) + "</code></pre></p>" + (returnedToESPUser ? "</div></div>" : "");
   }
 }
+
+/*
 function setQuery(id, json) {
   doOnClick(id, function () {
     idget("query").innerHTML = tojson(json);
   });
 }
+*/
 
 function CMDSystem() {
   //data structure
@@ -645,11 +646,13 @@ function ESPSystem(cmd) {
 
           if (link.colour == "YL") {
             //walk all paths between the 2 groups of link which are not direct
-            motivations.push("link " + link.ID + " is currently yellow, indirect paths between group " + link.lower + " and group " + link.higher + " are returned.");
-
-            respondWith({
-              links: cmd.indirectLinksOf(link),
-            });
+              var indirectPaths = cmd.indirectLinksOf(link);
+              if (indirectPaths.length >0) {
+            motivations.push("link " + link.ID + " is currently yellow, here are the link participating in the indirect paths between group " + link.lower + " and group " + link.higher );
+              } else {
+            motivations.push("link " + link.ID + " is currently yellow, but there are no indirect paths between group " + link.lower + " and group " + link.higher);
+              }
+            respondWith("no indirect paths");
           } else {
             respondWith("error");
             motivations.push("link " + link.ID + " is " + link.colour + ", you can only use a YLR 2nd step query on a yellow link.");
