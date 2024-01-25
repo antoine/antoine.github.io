@@ -1,26 +1,14 @@
 // Declare the chart dimensions and margins.
 const width = 1296;
-const height = width / 2;
+const height = width / 3;
 const marginTop = 20;
 const marginRight = 20;
 const marginBottom = 30;
 const marginLeft = 40;
 const groupsColors = ["#7018d3", "#6c4f00", "#f98517", "#00603d", "#680000", "#002f64"];
 
-// Declare the x (horizontal position) scale.
-const x = d3
-  .scaleUtc()
-  .domain([new Date("2023-01-01"), new Date("2024-01-01")])
-  .range([marginLeft, width - marginRight]);
-
-// Declare the y (vertical position) scale.
-const y = d3
-  .scaleLinear()
-  .domain([0, 100])
-  .range([height - marginBottom, marginTop]);
-
 var canvas = document.createElement("canvas");
-canvas.style.background = "#bbb"; // a valid CSS colour.
+canvas.style.background = "#eee"; // a valid CSS colour.
 
 var dpi = window.devicePixelRatio;
 canvas.width = width * dpi;
@@ -48,22 +36,64 @@ function graphThis(data) {
   function n(d3node) {
     return data.nodes[d3node.index];
   }
-  //this is fugly, everything is global variable in d3 world.
+  //data is a global variable in d3 world...
   function ticked() {
     context.clearRect(0, 0, width, height);
     context.save();
     context.translate(width / 2, height / 2);
 
     for (const d of links) {
+      var linkData = l(d);
       context.beginPath();
       context.lineWidth = 6;
-      context.moveTo(d.source.x, d.source.y);
-      //TODO use arcs to show multiple links
-      context.lineTo(d.target.x, d.target.y);
+      if (linkData.numberOfLinksInRelation == 1) {
+        //1 link, straigth
+        context.moveTo(d.source.x, d.source.y);
+        context.lineTo(d.target.x, d.target.y);
+      } else if (linkData.numberOfLinksInRelation == 2) {
+        //2 links, let's arc from source to target and then from target to source
+        //to differenciate
+        var startFrom = d.source;
+        var finishAt = d.target;
+        if (linkData.positionInRelation > 0) {
+          startFrom = d.target;
+          finishAt = d.source;
+        }
+        var startAt = [startFrom.x, startFrom.y];
+        twoArcs(startFrom, finishAt).forEach(function (samplePoint) {
+          context.moveTo(startAt[0], startAt[1]);
+          context.lineTo(samplePoint[0], samplePoint[1]);
+          startAt = samplePoint;
+        });
+        context.moveTo(startAt[0], startAt[1]);
+        context.lineTo(finishAt.x, finishAt.y);
+      } else {
+        //3 links, shouldn't be more but all links above the third will overlap
+        //anyhow
+        if (linkData.positionInRelation == 0) {
+          context.moveTo(d.source.x, d.source.y);
+          context.lineTo(d.target.x, d.target.y);
+        } else {
+          var startFrom = d.source;
+          var finishAt = d.target;
+          if (linkData.positionInRelation > 1) {
+            startFrom = d.target;
+            finishAt = d.source;
+          }
 
-      var linkData = l(d);
+          var startAt = [startFrom.x, startFrom.y];
+          twoArcs(startFrom, finishAt).forEach(function (samplePoint) {
+            context.moveTo(startAt[0], startAt[1]);
+            context.lineTo(samplePoint[0], samplePoint[1]);
+            startAt = samplePoint;
+          });
+          context.moveTo(startAt[0], startAt[1]);
+          context.lineTo(finishAt.x, finishAt.y);
+        }
+      }
+
       if (linkData.colour == "YL") {
-        context.strokeStyle = "yellow";
+        context.strokeStyle = "#fefe33";
       } else if (linkData.colour == "WL") {
         context.strokeStyle = "white";
       } else if (linkData.colour == "GL") {
@@ -186,3 +216,91 @@ function graphThis(data) {
 //container.append(svg.node());
 //document.getElementById("container").append(svg.node());
 document.getElementById("graph-container").append(canvas);
+
+//computing arc between 2 points
+function twoArcs(a, b) {
+  //we are talking about 2 arcs, position is either 0 or 1
+  //0 indicate normal slope, 1 reverse slope direction
+  return arcPoints([a.x, a.y], [b.x, b.y], 0.3, 5);
+}
+function arcPoints(a, b, r_frac, n) {
+  // a: origin point
+  // b: destination point
+  // r_frac: arc radius as a fraction of half the distance between a and b
+  // -- 1 results in a semicircle arc, the arc flattens out the closer to 0 the number is set, 0 is invalid
+  // n: number of points to sample from arc
+  let c = getCenter(a, b, r_frac);
+  let r = dist(c, a);
+
+  let aAngle = Math.atan2(a[1] - c[1], a[0] - c[0]),
+    bAngle = Math.atan2(b[1] - c[1], b[0] - c[0]);
+  //console.log(aAngle, bAngle);
+
+  if (aAngle > bAngle) {
+    bAngle += 2 * Math.PI;
+  }
+
+  let sampledPoints = d3.range(aAngle, bAngle, (bAngle - aAngle) / n).map((d) => [Math.cos(d) * r + c[0], Math.sin(d) * r + c[1]]);
+  //console.log(sampledPoints, b);
+  return sampledPoints;
+}
+
+function midpoint(a, b) {
+  return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+}
+
+function dist(a, b) {
+  return Math.sqrt(Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2));
+}
+
+function getP3(a, b, frac) {
+  let mid = midpoint(a, b);
+  let m = inverseSlope(a, b);
+  // check if B is below A
+  let bLower = b[1] < a[1] ? -1 : 1;
+  //let bLower = 1;
+
+  // distance from midpoint along slope: between 0 and half the distance between the two points
+  let d = 0.5 * dist(a, b) * frac;
+
+  let x = d / Math.sqrt(1 + Math.pow(m, 2));
+  let y = m * x;
+  return [bLower * x + mid[0], bLower * y + mid[1]];
+  // return [mid[0] + d, mid[1] - (d * (b[0] - a[0])) / (b[1] - a[1])];
+}
+
+function slope(a, b) {
+  // returns the slope of the line from point A to B
+  return (b[1] - a[1]) / (b[0] - a[0]);
+}
+
+function inverseSlope(a, b) {
+  // returns the inverse of the slope of the line from point A to B
+  // which is the slope of the perpendicular bisector
+  return -1 * (1 / slope(a, b));
+}
+
+function yIntercept(a, b) {
+  // returns the y intercept of the perpendicular bisector of the line from point A to B
+  let m = inverseSlope(a, b);
+  let p = midpoint(a, b);
+  let x = p[0];
+  let y = p[1];
+  return y - m * x;
+}
+
+function getCenter(a, b, frac) {
+  let c = getP3(a, b, frac);
+  let b1 = yIntercept(a, b);
+  let b2 = yIntercept(a, c);
+  let m1 = inverseSlope(a, b);
+  let m2 = inverseSlope(a, c);
+
+  // find the intersection of the two perpendicular bisectors
+  // i.e. solve m1 * x + b2 = m2 * x + b2 for x
+  let x = (b2 - b1) / (m1 - m2);
+  // sub x back into one of the linear equations to get y
+  let y = m1 * x + b1;
+
+  return [x, y];
+}

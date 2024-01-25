@@ -784,12 +784,38 @@ function CMDSystem() {
       return indexFound;
     }
 
+    //need to differenciate between cases of 1,2 or 3 (the max once prevalence
+    //of YL over YL is implemented) links between 2 groups as the arcs to use
+    //should differ
+
+    var linksOfARelation = new Map();
+
+    //establishing how many links per relation
     links.forEach(function (link) {
+      var relationKey = link.lower + " " + link.higher;
+      if (linksOfARelation.has(relationKey)) {
+        var linkNumber = linksOfARelation.get(relationKey).totalNbLink;
+        linksOfARelation.get(relationKey).totalNbLink = linkNumber + 1;
+      } else {
+        linksOfARelation.set(relationKey, {
+          totalNbLink: 1,
+          currentPosition: 0,
+        });
+      }
+    });
+
+    links.forEach(function (link) {
+      var relationKey = link.lower + " " + link.higher;
+      var relationInfos = linksOfARelation.get(relationKey);
+      var currentPosition = linksOfARelation.get(relationKey).currentPosition;
       graphLinks.push({
         source: getIndexOfIG(link.lower, graphNodes),
         target: getIndexOfIG(link.higher, graphNodes),
         colour: link.colour,
+        positionInRelation: currentPosition,
+        numberOfLinksInRelation: relationInfos.totalNbLink,
       });
+      linksOfARelation.get(relationKey).currentPosition = currentPosition + 1;
     });
 
     return { nodes: graphNodes, links: graphLinks };
