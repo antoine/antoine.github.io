@@ -1,20 +1,15 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <title>MID demonstration app</title>
     <meta charset="UTF-8" />
-    <link rel="icon" href="data:,">
+    <link rel="icon" href="data:," />
     <script src="esp.js" type="text/javascript" defer></script>
-    <link
-      href="css/bootstrap.min.css"
-      rel="stylesheet"
-      crossorigin="anonymous"
-    />
-    <link
-      href="css/custom.css"
-      rel="stylesheet"
-      crossorigin="anonymous"
-    />
+    <script src="smallest-enclosing-circle.js" type="text/javascript" defer></script>
+    <script src="d3.v7.min.js" type="text/javascript" defer></script>
+    <script src="cmd_graph.js" type="text/javascript" defer></script>
+    <link href="css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+    <link href="css/custom.css" rel="stylesheet" crossorigin="anonymous" />
   </head>
   <body>
     <div class="container">
@@ -26,14 +21,10 @@
 
       <ul class="nav nav-tabs mt-2" id="myTab" role="tablist">
         <li class="nav-item" role="presentation">
-          <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true" >
-           build your data! 
-          </button>
-          </li>
+          <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true">build your data!</button>
+        </li>
         <li class="nav-item" role="presentation">
-          <button class="nav-link" id="queryMID-tab" data-bs-toggle="tab" data-bs-target="#queryMID" type="button" role="tab" aria-controls="queryMID" aria-selected='false' >
-           query your MID! 
-          </button>
+          <button class="nav-link" id="queryMID-tab" data-bs-toggle="tab" data-bs-target="#queryMID" type="button" role="tab" aria-controls="queryMID" aria-selected="false">query your MID!</button>
         </li>
         <!--
         <li class="nav-item" role="presentation">
@@ -45,120 +36,117 @@
       </ul>
 
       <div class="tab-content" id="myTabContent">
-        <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab" >
+        <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
           <div class="row mt-1">
             <div class="col-12">
-            <!--
+              <!--
               <textarea class="form-control" rows="20" id="query"></textarea>
               -->
-            <p>
-              <!-- TODO add system button -->
-              <button type="button" id="addSystemButton" class="btn btn-primary mt-1" >
-                add System 
-              </button>
-            </p>
-            <p>
-
-              <!-- TODO add system select for IG -->
-              belonging to system <select id="systemOfGroup"></select> please
-              <button type="button" id="addIGButton" class="btn btn-primary mt-1" >
-                add Identiy Group 
-              </button>
-            </p>
+              <p>
+                <!-- TODO add system button -->
+                <button type="button" id="addSystemButton" class="btn btn-primary mt-1">add System</button>
+              </p>
+              <p>
+                <!-- TODO add system select for IG -->
+                belonging to system
+                <select id="systemOfGroup"></select>
+                please
+                <button type="button" id="addIGButton" class="btn btn-primary mt-1">add Identiy Group</button>
+              </p>
 
               <p>
-              between IG
-              <select id="leftIG"></select>
-              and IG
-              <select id="rightIG"></select>
-              add a 
-              <select id="linkColour"></select>
-              link 
-              <button type="button" id="addLinkButton" class="btn btn-primary mt-1" > add link </button>
+                between IG
+                <select id="leftIG"></select>
+                and IG
+                <select id="rightIG"></select>
+                add a
+                <select id="linkColour"></select>
+                link
+                <button type="button" id="addLinkButton" class="btn btn-primary mt-1">add link</button>
               </p>
-              <hr>
+              <hr />
               State management
               <div class="input-group mb-3">
-                <input type="text" id="stateName"  class="form-control" placeholder="identifier of this dataset"> </input>
-                <button type="button" id="saveData" class="btn btn-outline-secondary" >save as!</button>
+                <input type="text" id="stateName" class="form-control" placeholder="identifier of this dataset" />
+                <button type="button" id="saveData" class="btn btn-outline-secondary">save as!</button>
               </div>
               <div class="input-group mb-3">
-                <select class="form-select" id="selectedSavedState" > </select>
-                <button type="button" id="loadData" class="btn btn-outline-secondary" >load this!</button>
+                <select class="form-select" id="selectedSavedState"></select>
+                <button type="button" id="loadData" class="btn btn-outline-secondary">load this!</button>
               </div>
-              <button type="button" id="exportCurrent" class="btn btn-primary mt-1" >export current state</button>
-              <button type="button" id="importToCurrent" class="btn btn-primary mt-1" >import state</button>
+              <button type="button" id="exportCurrent" class="btn btn-primary mt-1">export current state</button>
+              <button type="button" id="importToCurrent" class="btn btn-primary mt-1">import state</button>
             </div>
           </div>
         </div>
-        <div class="tab-pane fade " id="queryMID" role="tabpanel" aria-labelledby="queryMID-tab" >
+        <div class="tab-pane fade" id="queryMID" role="tabpanel" aria-labelledby="queryMID-tab">
           <div class="row mt-1">
             <div class="col-12">
               <p>
-              get me link 
-              <select id="queriedLink"></select>
-              using ESP profile for 
-              <select id="LMFQueryTypes">
-                <option value="YLR1">YLR - 1st step</option>
-                <option value="YLR2">YLR - 2nd step</option>
-                <!--
+                get me link
+                <select id="queriedLink"></select>
+                using ESP profile for
+                <select id="LMFQueryTypes">
+                  <option value="YLR1">YLR - 1st step</option>
+                  <option value="YLR2">YLR - 2nd step</option>
+                  <!--
                 <option value="RL">Red link</option>
                 <option value="R1">Rectification - 1<sup>st</sup> step</option>
                 <option value="R2">Rectification - 2<sup>nd</sup> step</option>
-                -->
-              </select>
-              as the verifying authority  
-              <input type="checkbox" id="asVerifierOfTheLink" checked/>
+                --></select>
+                as the verifying authority
+                <input type="checkbox" id="asVerifierOfTheLink" checked />
               </p>
-              <p style="display:none;">
-              By the way, it does so happen that I have access to the following systems
-              <span id="systemsListForMIDQuery"></span>
+              <p style="display: none">
+                By the way, it does so happen that I have access to the following systems
+                <span id="systemsListForMIDQuery"></span>
               </p>
-              <button type="button" id="LMFquery" class="btn btn-primary mt-1" >fetch!</button>
+              <button type="button" id="LMFquery" class="btn btn-primary mt-1">fetch!</button>
             </div>
           </div>
-        <div class="row mt-1">
-          <div class="col-8 showdown">
-            <span id="MIDQueryResult"></span>
-          </div>
-          <div class="col-4 showdown">
-            <span id="MIDQueryMotivations"></span>
-          </div>
+          <div class="row mt-1">
+            <div class="col-8 showdown">
+              <span id="MIDQueryResult"></span>
+            </div>
+            <div class="col-4 showdown">
+              <span id="MIDQueryMotivations"></span>
+            </div>
           </div>
         </div>
-        <div class="tab-pane fade " id="queryCIR" role="tabpanel" aria-labelledby="queryCIR-tab" >
+        <div class="tab-pane fade" id="queryCIR" role="tabpanel" aria-labelledby="queryCIR-tab">
           <div class="row mt-1">
             <div class="col-12">
               <p>
-              I have access to the following systems
-              <select id="systemsAccessCIR" multiple></select>
-              get me groups   
-              <select id="queriedGroups" multiple></select>
-              
-              <br>
-              <button type="button" id="DMFquery" class="btn btn-primary mt-1" >fetch!</button>
+                I have access to the following systems
+                <select id="systemsAccessCIR" multiple></select>
+                get me groups
+                <select id="queriedGroups" multiple></select>
+
+                <br />
+                <button type="button" id="DMFquery" class="btn btn-primary mt-1">fetch!</button>
               </p>
             </div>
           </div>
         </div>
         <div>
-          <hr>
+          <hr />
           Current state:
-        <div class="row mt-1">
-          <div class="col-4 showdown">
-            <span id="systemsShowroom"></span>
-          </div>
-          <div class="col-4 showdown" style="border-left: 1px solid grey;">
-            <span id="groupsShowroom"></span>
-          </div>
-          <div class="col-4 showdown" style="border-left: 1px solid grey;">
-            <span id="linksShowroom"></span>
-            <p id="visible_console"></p>
-          </div>
+          <div id="graph-container" class="row mt-1"></div>
+          <div class="row mt-1">
+            <div class="col-4 showdown">
+              <span id="systemsShowroom"></span>
+            </div>
+            <div class="col-4 showdown" style="border-left: 1px solid grey">
+              <span id="groupsShowroom"></span>
+            </div>
+            <div class="col-4 showdown" style="border-left: 1px solid grey">
+              <span id="linksShowroom"></span>
+              <p id="visible_console"></p>
+            </div>
           </div>
         </div>
       </div>
-      </div>
+    </div>
     <!-- Optional JavaScript; choose one of the two! -->
 
     <!-- Option 1: Bootstrap Bundle with Popper -->
