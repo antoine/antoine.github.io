@@ -5,6 +5,7 @@ const marginTop = 20;
 const marginRight = 20;
 const marginBottom = 30;
 const marginLeft = 40;
+const groupsColors = ["#7018d3", "#6c4f00", "#f98517", "#00603d", "#680000", "#002f64"];
 
 // Declare the x (horizontal position) scale.
 const x = d3
@@ -28,6 +29,14 @@ canvas.style.width = width + "px";
 const context = canvas.getContext("2d");
 context.scale(dpi, dpi);
 context.font = "bold 13px sans-serif";
+
+function getColorForEUIS(EUISID) {
+  if (groupsColors.length > EUISID) {
+    return groupsColors[EUISID];
+  } else {
+    return "black";
+  }
+}
 
 function graphThis(data) {
   const links = data.links.map((d) => Object.create(d));
@@ -76,10 +85,10 @@ function graphThis(data) {
       context.beginPath();
       //context.moveTo(d.x + 3, d.y);
       context.arc(d.x, d.y, 12, 0, 2 * Math.PI);
-      //TODO manage per-system colour
-      context.fillStyle = "#000";
+      var color = getColorForEUIS(nodeData.EUISID);
+      context.fillStyle = color;
       context.fill();
-      context.strokeStyle = "#000";
+      context.strokeStyle = color;
       context.stroke();
 
       //context.strokeStyle = "white";
@@ -105,7 +114,6 @@ function graphThis(data) {
       context.beginPath();
       //context.moveTo(d.x + 3, d.y);
       context.arc(circle.x, circle.y, circle.r + 20, 0, 2 * Math.PI);
-      //TODO manage per-system colour
       context.strokeStyle = "#3ca1c3";
       context.stroke();
       context.fillStyle = "#ADD8E6";
@@ -116,7 +124,7 @@ function graphThis(data) {
   }
   const simulation = d3
     .forceSimulation(nodes)
-    .force("charge", d3.forceManyBody().strength(-30))
+    .force("charge", d3.forceManyBody().strength(-90))
     //center is not working yet
     .force(
       "link",
