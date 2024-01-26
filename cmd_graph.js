@@ -1,9 +1,16 @@
 // Declare the chart dimensions and margins.
-function D3ForceGraph() {
+function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
   const width = 1296;
-  const height = width / 3;
+  const height = width / ratio;
 
-  const groupsColors = ["#7018d3", "#6c4f00", "#f98517", "#00603d", "#680000", "#002f64"];
+  const groupsColors = [
+    "#7018d3",
+    "#6c4f00",
+    "#f98517",
+    "#00603d",
+    "#680000",
+    "#002f64",
+  ];
 
   var canvas = document.createElement("canvas");
   canvas.style.background = "#eee"; // a valid CSS colour.
@@ -14,7 +21,8 @@ function D3ForceGraph() {
   canvas.style.width = width + "px";
   const context = canvas.getContext("2d");
   context.scale(dpi, dpi);
-  context.font = "bold 13px sans-serif";
+  const fontsize = 13 * zoomFactor;
+  context.font = "bold " + fontsize + "px sans-serif";
 
   this.getColorForEUIS = function (EUISID) {
     return getColorForEUIS(EUISID);
@@ -28,7 +36,16 @@ function D3ForceGraph() {
     }
   }
 
+  this.reset = function () {
+    //TODO clearRect does not clear the canvas the first time around... why?
+    //context.clearRect(0, 0, width, height);
+    document.getElementById(graphContainerId).style.cssText =
+      "visibility:hidden";
+  };
+
   this.graphThis = function (data) {
+    document.getElementById(graphContainerId).style.cssText =
+      "visibility:visible";
     const links = data.links.map((d) => Object.create(d));
     const nodes = data.nodes.map((d) => Object.create(d));
 
@@ -47,7 +64,7 @@ function D3ForceGraph() {
       for (const d of links) {
         var linkData = l(d);
         context.beginPath();
-        context.lineWidth = 6;
+        context.lineWidth = 6 * zoomFactor;
         if (linkData.numberOfLinksInRelation == 1) {
           //1 link, straigth
           context.moveTo(d.source.x, d.source.y);
@@ -119,7 +136,7 @@ function D3ForceGraph() {
         context.lineWidth = 1;
         context.beginPath();
         //context.moveTo(d.x + 3, d.y);
-        context.arc(d.x, d.y, 12, 0, 2 * Math.PI);
+        context.arc(d.x, d.y, 12 * zoomFactor, 0, 2 * Math.PI);
         var color = getColorForEUIS(nodeData.EUISID);
         context.fillStyle = color;
         context.fill();
@@ -147,7 +164,13 @@ function D3ForceGraph() {
         var circle = makeCircle(coordsOfGroupsOfFile);
         context.lineWidth = 1;
         context.beginPath();
-        context.arc(circle.x, circle.y, circle.r + 20, 0, 2 * Math.PI);
+        context.arc(
+          circle.x,
+          circle.y,
+          circle.r + 20 * zoomFactor,
+          0,
+          2 * Math.PI,
+        );
         //context.strokeStyle = "#3ca1c3";
         //context.stroke();
         context.fillStyle = "#ADD8E6";
@@ -178,9 +201,9 @@ function D3ForceGraph() {
             //return 20 is the default
             var linkData = l(link);
             if (linkData.colour == "WL" || linkData.colour == "MRL") {
-              return 50;
+              return 50 * zoomFactor;
             } else {
-              return 90;
+              return 90 * zoomFactor;
             }
           })
           .iterations(10),
@@ -219,7 +242,7 @@ function D3ForceGraph() {
   // Append the SVG element.
   //container.append(svg.node());
   //document.getElementById("container").append(svg.node());
-  document.getElementById("graph-container").append(canvas);
+  document.getElementById(graphContainerId).append(canvas);
 
   //computing arc between 2 points
   function twoArcs(a, b) {
@@ -227,6 +250,8 @@ function D3ForceGraph() {
     //0 indicate normal slope, 1 reverse slope direction
     return arcPoints([a.x, a.y], [b.x, b.y], 0.3, 5);
   }
+
+  //taken from observable
   function arcPoints(a, b, r_frac, n) {
     // a: origin point
     // b: destination point
@@ -244,7 +269,9 @@ function D3ForceGraph() {
       bAngle += 2 * Math.PI;
     }
 
-    let sampledPoints = d3.range(aAngle, bAngle, (bAngle - aAngle) / n).map((d) => [Math.cos(d) * r + c[0], Math.sin(d) * r + c[1]]);
+    let sampledPoints = d3
+      .range(aAngle, bAngle, (bAngle - aAngle) / n)
+      .map((d) => [Math.cos(d) * r + c[0], Math.sin(d) * r + c[1]]);
     //console.log(sampledPoints, b);
     return sampledPoints;
   }
@@ -308,4 +335,71 @@ function D3ForceGraph() {
 
     return [x, y];
   }
+
+  //pure function
+  this.buildGraphData = function (gFiles, gLinks) {
+    const graphNodes = [];
+    const graphLinks = [];
+
+    var nodeI = 0;
+    gFiles.forEach(function (file, ifid) {
+      file.groups.forEach(function (group) {
+        graphNodes.push({
+          index: nodeI++,
+          IGID: group.IGID,
+          EUISID: group.EUISID,
+          file: ifid,
+        });
+      });
+    });
+
+    function getIndexOfIG(IGID, nodes) {
+      var indexFound;
+      nodes.every(function (node, index) {
+        if (node.IGID == IGID) {
+          indexFound = index;
+          return false;
+        } else {
+          return true;
+        }
+      });
+      return indexFound;
+    }
+
+    //need to differenciate between cases of 1,2 or 3 (the max once prevalence
+    //of YL over YL is implemented) links between 2 groups as the arcs to use
+    //should differ
+
+    var linksOfARelation = new Map();
+
+    //establishing how many links per relation
+    gLinks.forEach(function (link) {
+      var relationKey = link.lower + " " + link.higher;
+      if (linksOfARelation.has(relationKey)) {
+        var linkNumber = linksOfARelation.get(relationKey).totalNbLink;
+        linksOfARelation.get(relationKey).totalNbLink = linkNumber + 1;
+      } else {
+        linksOfARelation.set(relationKey, {
+          totalNbLink: 1,
+          currentPosition: 0,
+        });
+      }
+    });
+
+    gLinks.forEach(function (link) {
+      var relationKey = link.lower + " " + link.higher;
+      var relationInfos = linksOfARelation.get(relationKey);
+      var currentPosition = linksOfARelation.get(relationKey).currentPosition;
+      graphLinks.push({
+        source: getIndexOfIG(link.lower, graphNodes),
+        target: getIndexOfIG(link.higher, graphNodes),
+        colour: link.colour,
+        positionInRelation: currentPosition,
+        numberOfLinksInRelation: relationInfos.totalNbLink,
+      });
+      linksOfARelation.get(relationKey).currentPosition = currentPosition + 1;
+    });
+
+    return { nodes: graphNodes, links: graphLinks };
+  };
 }

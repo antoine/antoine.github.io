@@ -17,12 +17,7 @@ function show(showroom, name, data) {
   if (typeof data === "string" || data instanceof String) {
     idget(showroom).innerHTML = "<p>" + name + "</p><p>" + data + "</p>";
   } else {
-    idget(showroom).innerHTML =
-      "<p>" +
-      name +
-      "</p><p><pre><code class='small'>" +
-      tojson(data) +
-      "</code></pre></p>";
+    idget(showroom).innerHTML = "<p>" + name + "</p><p><pre><code class='small'>" + tojson(data) + "</code></pre></p>";
   }
 }
 
@@ -108,13 +103,7 @@ function visiblelog(data, returnedToESPUser) {
     idget("visible_console").innerHTML += "<p>" + data + "</p>";
   } else {
     idget("visible_console").innerHTML +=
-      (returnedToESPUser
-        ? " <div class='row mt-1'> <div class='col-1 bg-success' > </div><div class='col-11'>"
-        : "") +
-      "<p><pre><code class='small'>" +
-      tojson(data) +
-      "</code></pre></p>" +
-      (returnedToESPUser ? "</div></div>" : "");
+      (returnedToESPUser ? " <div class='row mt-1'> <div class='col-1 bg-success' > </div><div class='col-11'>" : "") + "<p><pre><code class='small'>" + tojson(data) + "</code></pre></p>" + (returnedToESPUser ? "</div></div>" : "");
   }
 }
 
@@ -203,15 +192,12 @@ function CMDSystem(graph) {
   var refreshRightIGList = function () {
     var currentlyOnLeft = currentValue("leftIG");
     var select = idget("rightIG");
-    var leftGroup = group(currentlyOnLeft);
+    var leftGroup = group(currentlyOnLeft).group;
     cleanSelect(select);
     files.forEach(function (file) {
       file.groups.forEach(function (freeGroup) {
         //TODO if already 2 yellow between them then the right IG should be removed
-        if (
-          freeGroup.IGID != currentlyOnLeft &&
-          freeGroup.EUISID != leftGroup.EUISID
-        ) {
+        if (freeGroup.IGID != currentlyOnLeft && freeGroup.EUISID != leftGroup.EUISID) {
           var groupOption = document.createElement("option");
           groupOption.text = freeGroup.IGID;
           select.add(groupOption);
@@ -260,14 +246,8 @@ function CMDSystem(graph) {
       links.push({
         ID: nextLinkID,
         colour: colour,
-        lower:
-          currentlyOnLeft < currentlyOnRight
-            ? currentlyOnLeft
-            : currentlyOnRight,
-        higher:
-          currentlyOnLeft < currentlyOnRight
-            ? currentlyOnRight
-            : currentlyOnLeft,
+        lower: currentlyOnLeft < currentlyOnRight ? currentlyOnLeft : currentlyOnRight,
+        higher: currentlyOnLeft < currentlyOnRight ? currentlyOnRight : currentlyOnLeft,
       });
       nextLinkID++;
     }
@@ -301,8 +281,7 @@ function CMDSystem(graph) {
       var option = document.createElement("span");
       option.innerHTML = "system " + system;
       option.className = "badge";
-      option.style.cssText =
-        "background-color:" + graph.getColorForEUIS(system);
+      option.style.cssText = "background-color:" + graph.getColorForEUIS(system);
       const space = document.createElement("span");
       space.innerHTML = " ";
       span.appendChild(space);
@@ -317,14 +296,7 @@ function CMDSystem(graph) {
     systems.forEach(function (system) {
       var option = document.createElement("div");
       option.className = "form-check form-switch";
-      option.innerHTML =
-        '<input class="form-check-input" type="checkbox" role="switch" id="system' +
-        system +
-        'MIDQueryOption"> <label class="form-check-label" for="system' +
-        system +
-        'MIDQueryOption">' +
-        system +
-        "</label>";
+      option.innerHTML = '<input class="form-check-input" type="checkbox" role="switch" id="system' + system + 'MIDQueryOption"> <label class="form-check-label" for="system' + system + 'MIDQueryOption">' + system + "</label>";
       span.appendChild(option);
     });
   };
@@ -344,14 +316,7 @@ function CMDSystem(graph) {
     var rightIfId = fileOfGroup(rightIG);
     if (leftIfId === rightIfId) {
       //this should never arrise, and is the only reason for post-constraint checking.
-      log(
-        leftIG +
-          " and " +
-          rightIG +
-          " are already in the same file " +
-          leftIfId +
-          " nothing to do, but links is created",
-      );
+      log(leftIG + " and " + rightIG + " are already in the same file " + leftIfId + " nothing to do, but links is created");
     } else {
       //merging right onto left
       var leftFile = files.get(leftIfId);
@@ -377,7 +342,7 @@ function CMDSystem(graph) {
       if (!ifdef(foundGroup)) {
         file.groups.every(function (freeGroup) {
           if (freeGroup.IGID == groupID) {
-            foundGroup = freeGroup;
+            foundGroup = { group: freeGroup, ifid: ifid };
             return false;
           } else {
             return true;
@@ -412,19 +377,12 @@ function CMDSystem(graph) {
     var leftIfId = fileOfGroup(leftIG);
     var rightIfId = fileOfGroup(rightIG);
     if (leftIfId === rightIfId) {
-      //TODO this should never happen though, since we exclude the link outright, should this (and the returned boolean) remain?
-      loge(
-        leftIG +
-          " and " +
-          rightIG +
-          " are already in the same file " +
-          leftIfId +
-          ", they cannot be kept in different files anymore. ",
-      );
-
+      //TODO cam this test be removed? this should never happen since we exclude the link outright, should this (and the returned boolean) remain?
+      loge(leftIG + " and " + rightIG + " are already in the same file " + leftIfId + ", they cannot be kept in different files anymore. ");
       return false;
     } else {
-      //TODO not checking for duplicates yet
+      //TODO excludedGroups will contain duplicates over time, not an issue but
+      //not very clean either
       var leftFile = files.get(leftIfId);
       leftFile.excludedGroups.push(rightIG);
       var rightFile = files.get(rightIfId);
@@ -439,10 +397,8 @@ function CMDSystem(graph) {
     var currentlyOnRight = currentValue("rightIG");
     if (ifdef(currentlyOnLeft) && ifdef(currentlyOnRight)) {
       //links are always created with the lower ig id first
-      var lowerIgId =
-        currentlyOnLeft < currentlyOnRight ? currentlyOnLeft : currentlyOnRight;
-      var higherIgId =
-        currentlyOnLeft < currentlyOnRight ? currentlyOnRight : currentlyOnLeft;
+      var lowerIgId = currentlyOnLeft < currentlyOnRight ? currentlyOnLeft : currentlyOnRight;
+      var higherIgId = currentlyOnLeft < currentlyOnRight ? currentlyOnRight : currentlyOnLeft;
 
       var select = idget("linkColour");
       cleanSelect(select);
@@ -453,11 +409,7 @@ function CMDSystem(graph) {
       var canHaveGL = true;
 
       links.forEach(function (link) {
-        if (
-          link.colour != "YL" &&
-          link.lower == lowerIgId &&
-          link.higher == higherIgId
-        ) {
+        if (link.colour != "YL" && link.lower == lowerIgId && link.higher == higherIgId) {
           //already a non YL link
           canHaveWL = false;
           canHaveMRL = false;
@@ -483,10 +435,7 @@ function CMDSystem(graph) {
 
       //now checking to see if merging links are possible
       var rightFile = files.get(rightIfId);
-      if (
-        !areMergingLinksPossible(leftFile, rightFile) ||
-        !areMergingLinksPossible(rightFile, leftFile)
-      ) {
+      if (!areMergingLinksPossible(leftFile, rightFile) || !areMergingLinksPossible(rightFile, leftFile)) {
         canHaveMRL = false;
         canHaveWL = false;
       }
@@ -588,10 +537,7 @@ function CMDSystem(graph) {
   this.getRelationOf = function (link) {
     var linksInSameRelation = [];
     links.forEach(function (observedLink) {
-      if (
-        observedLink.lower == link.lower &&
-        observedLink.higher == link.higher
-      ) {
+      if (observedLink.lower == link.lower && observedLink.higher == link.higher) {
         linksInSameRelation.push(observedLink);
       }
     });
@@ -599,49 +545,36 @@ function CMDSystem(graph) {
   };
 
   this.getGroup = function (groupID) {
-    return group(groupID);
+    return group(groupID).group;
   };
 
   this.indirectLinksOf = function (link) {
-    //start from lower to higher
-    console.log(
-      "looking for all indirect links from " +
-        link.lower +
-        " to " +
-        link.higher,
-    );
+    //from lower to higher
+    //console.log("looking for all indirect links from " + link.lower + " to " + link.higher);
     var linksWeDoNotWantToSee = [];
+    //the links of the relation is not strictly required when doing 2nd step
+    //query (because 1st step will have provided it), but it help provide a context to the graph
+    //in this particular simulation, commenting out for now
+    /*
     this.getRelationOf(link).forEach(function (linkOfTheRelation) {
       linksWeDoNotWantToSee.push(linkOfTheRelation.ID);
     });
-    var allPaths = indirectLinksOf(
-      link.higher,
-      link.lower,
-      null,
-      [],
-      [],
-      2,
-      linksWeDoNotWantToSee,
-    );
-    //allPaths may contain duplicates in case of indirect paths sharing a common
-    //trunk
+    */
+    var allPaths = indirectLinksOf(link.higher, link.lower, null, [], [], 2, linksWeDoNotWantToSee);
+    //same as above, the yellow link being the query input is not strictly
+    //required to be returned, but it helps the simulation work better
+    allPaths.push(link.ID);
+    //allPaths may contain duplicates in case of indirect paths sharing a common trunk
     return Array.from(new Set(allPaths).values());
   };
 
   //recursive call, exploring all links as potential cycling graphs
-  //keeping track of the links up to that point, as they are the path we would
-  //consider returning.
-  //also keeping track of the groups seens up to that point, to avoid looping
-  //back on our tracks
-  var indirectLinksOf = function (
-    targetIG,
-    currentIG,
-    callingFromLink,
-    linksLeadingToThisPoint,
-    groupsLeadingToThisPoint,
-    increment,
-    linksWeDoNotWantToSee,
-  ) {
+  //keeping track of the links and groups up to that point to avoid cycling.
+  //Once a branch of the recursive call reach the target all the past link
+  //leading to this moment are returned
+  var indirectLinksOf = function (targetIG, currentIG, callingFromLink, linksLeadingToThisPoint, groupsLeadingToThisPoint, increment, linksWeDoNotWantToSee) {
+    //logging this is very usefull in debugging
+    //but it's some heavy logs
     var heavyLogs = false;
     function hlog(stuff) {
       if (heavyLogs) {
@@ -657,35 +590,19 @@ function CMDSystem(graph) {
       linksLeadingToThisPoint.push(callingFromLink);
     }
     if (isOneOf(currentIG, groupsLeadingToThisPoint)) {
-      hlog(
-        inc +
-          "we've been through this group before, diregarding as already seen groups are " +
-          JSON.stringify(groupsLeadingToThisPoint),
-      );
+      hlog(inc + "we've been through this group before, diregarding as already seen groups are " + JSON.stringify(groupsLeadingToThisPoint));
     } else {
       groupsLeadingToThisPoint.push(currentIG);
-      hlog(
-        inc +
-          "looking for links from " +
-          currentIG +
-          ", links leading to this point are " +
-          JSON.stringify(linksLeadingToThisPoint),
-      );
+      hlog(inc + "looking for links from " + currentIG + ", links leading to this point are " + JSON.stringify(linksLeadingToThisPoint));
 
       links.forEach(function (link) {
-        hlog(
-          inc +
-            "considering link " +
-            link.ID +
-            ": " +
-            link.lower +
-            "<-> " +
-            link.higher,
-        );
+        hlog(inc + "considering link " + link.ID + ": " + link.lower + "<-> " + link.higher);
         if (!isOneOf(link.ID, linksWeDoNotWantToSee)) {
+          //TODO check if next test is still required, as we are checking all
+          //groups from the past now
           if (!isOneOf(link.ID, linksLeadingToThisPoint)) {
             //excluding the link we just called from
-            //TODO test might not be required as we are checking all links from the past now
+            //TODO check if next test is still required, as we are checking all links from the past now
             if (link.ID != callingFromLink) {
               if (link.colour != "YL") {
                 if (link.lower == currentIG || link.higher == currentIG) {
@@ -693,19 +610,10 @@ function CMDSystem(graph) {
                   //ideally should only check the lower one if the higher is a match,
                   //but we should have links between the same group
                   if (link.higher == targetIG || link.lower == targetIG) {
-                    hlog(
-                      inc +
-                        "link is also connected to targetIG " +
-                        targetIG +
-                        ", a WINNER!!",
-                    );
+                    hlog(inc + "link is also connected to targetIG " + targetIG + ", a WINNER!!");
                     //found the end of a path!
                     indirectLinks.push(link.ID);
-                    hlog(
-                      inc +
-                        "all past links are WINNER too " +
-                        JSON.stringify(linksLeadingToThisPoint),
-                    );
+                    hlog(inc + "all past links are WINNER too " + JSON.stringify(linksLeadingToThisPoint));
                     //array.push(...anotherarray) concat anotherarry into array, in
                     //place, array.concat(anotherarray) will happily return a copy of
                     //both without changing them in place because reasons
@@ -713,56 +621,29 @@ function CMDSystem(graph) {
                   } else {
                     hlog(inc + "link goes somewhere else, going deeper");
                     moreLinkToFollow.push({
-                      nextIG:
-                        link.lower == currentIG ? link.higher : link.lower,
+                      nextIG: link.lower == currentIG ? link.higher : link.lower,
                       linkID: link.ID,
                     });
                   }
                 } else {
-                  hlog(
-                    inc +
-                      "link is not connected to currentIG " +
-                      currentIG +
-                      ", disregarding",
-                  );
+                  hlog(inc + "link is not connected to currentIG " + currentIG + ", disregarding");
                 }
               } else {
                 hlog(inc + "link is yellow, disregarding");
               }
             } else {
-              hlog(
-                inc +
-                  "link is same as the one we are calling from, disregarding",
-              );
+              hlog(inc + "link is same as the one we are calling from, disregarding");
             }
           } else {
-            hlog(
-              inc +
-                "link is from the past, diregarding as past links are " +
-                JSON.stringify(linksLeadingToThisPoint),
-            );
+            hlog(inc + "link is from the past, diregarding as past links are " + JSON.stringify(linksLeadingToThisPoint));
           }
         } else {
-          hlog(
-            inc +
-              "link is to be ignored, diregarding as links to be ignored are " +
-              JSON.stringify(linksWeDoNotWantToSee),
-          );
+          hlog(inc + "link is to be ignored, diregarding as links to be ignored are " + JSON.stringify(linksWeDoNotWantToSee));
         }
       });
 
       moreLinkToFollow.forEach(function (linkInfos) {
-        indirectLinks.push(
-          ...indirectLinksOf(
-            targetIG,
-            linkInfos.nextIG,
-            linkInfos.linkID,
-            linksLeadingToThisPoint.slice(0),
-            groupsLeadingToThisPoint.slice(0),
-            increment + 2,
-            linksWeDoNotWantToSee,
-          ),
-        );
+        indirectLinks.push(...indirectLinksOf(targetIG, linkInfos.nextIG, linkInfos.linkID, linksLeadingToThisPoint.slice(0), groupsLeadingToThisPoint.slice(0), increment + 2, linksWeDoNotWantToSee));
       });
     }
 
@@ -791,88 +672,64 @@ function CMDSystem(graph) {
     return mySpaces;
   };
 
-  var getGraphData = function () {
-    const graphNodes = [];
-    const graphLinks = [];
+  var regraph = function () {
+    graph.graphThis(graph.buildGraphData(files, links));
+  };
 
-    var nodeI = 0;
-    files.forEach(function (file, ifid) {
-      file.groups.forEach(function (group) {
-        graphNodes.push({
-          index: nodeI++,
-          IGID: group.IGID,
-          EUISID: group.EUISID,
-          file: ifid,
+  this.getGroupsFromLinks = function (selectedLinks) {
+    function insertIfNotKnown(filteredFiles, groupAndIfId) {
+      if (filteredFiles.has(groupAndIfId.ifid)) {
+        var groupsAlreadyInFile = false;
+        filteredFiles.get(groupAndIfId.ifid).groups.every(function (alreadyKnownGroup) {
+          if (alreadyKnownGroup.IGID == groupAndIfId.group.IGID) {
+            groupsAlreadyInFile = true;
+            return false;
+          } else {
+            return true;
+          }
         });
-      });
-    });
+        if (!groupsAlreadyInFile) {
+          filteredFiles.get(groupAndIfId.ifid).groups.push(groupAndIfId.group);
+        }
+      } else {
+        filteredFiles.set(groupAndIfId.ifid, { ifid: groupAndIfId.ifid, groups: [groupAndIfId.group] });
+      }
+    }
 
-    function getIndexOfIG(IGID, nodes) {
-      var indexFound;
-      nodes.every(function (node, index) {
-        if (node.IGID == IGID) {
-          indexFound = index;
+    const filteredFiles = new Map();
+    selectedLinks.forEach(function (link) {
+      insertIfNotKnown(filteredFiles, group(link.lower));
+      insertIfNotKnown(filteredFiles, group(link.higher));
+    });
+    return filteredFiles;
+  };
+
+  this.getLinks = function (selectedLinksIDs) {
+    const selectedLinks = [];
+    links.forEach(function (link) {
+      selectedLinksIDs.forEach(function (selectedLinkID) {
+        if (link.ID == selectedLinkID) {
+          selectedLinks.push(link);
           return false;
         } else {
           return true;
         }
       });
-      return indexFound;
-    }
-
-    //need to differenciate between cases of 1,2 or 3 (the max once prevalence
-    //of YL over YL is implemented) links between 2 groups as the arcs to use
-    //should differ
-
-    var linksOfARelation = new Map();
-
-    //establishing how many links per relation
-    links.forEach(function (link) {
-      var relationKey = link.lower + " " + link.higher;
-      if (linksOfARelation.has(relationKey)) {
-        var linkNumber = linksOfARelation.get(relationKey).totalNbLink;
-        linksOfARelation.get(relationKey).totalNbLink = linkNumber + 1;
-      } else {
-        linksOfARelation.set(relationKey, {
-          totalNbLink: 1,
-          currentPosition: 0,
-        });
-      }
     });
-
-    links.forEach(function (link) {
-      var relationKey = link.lower + " " + link.higher;
-      var relationInfos = linksOfARelation.get(relationKey);
-      var currentPosition = linksOfARelation.get(relationKey).currentPosition;
-      graphLinks.push({
-        source: getIndexOfIG(link.lower, graphNodes),
-        target: getIndexOfIG(link.higher, graphNodes),
-        colour: link.colour,
-        positionInRelation: currentPosition,
-        numberOfLinksInRelation: relationInfos.totalNbLink,
-      });
-      linksOfARelation.get(relationKey).currentPosition = currentPosition + 1;
-    });
-
-    return { nodes: graphNodes, links: graphLinks };
-  };
-
-  var regraph = function () {
-    graph.graphThis(getGraphData());
+    return selectedLinks;
   };
 }
 
-function ESPSystem(cmd) {
+function ESPSystem(cmd, queryGraph) {
   this.fetchLink = function () {
+    queryGraph.reset();
     var querytype = currentValue("LMFQueryTypes");
     var motivations = [];
     if (querytype == "YLR1" || querytype == "YLR2") {
       //if not verifying authority then the profile cannot be used
       if (!idget("asVerifierOfTheLink").checked) {
         respondWith("error");
-        motivations.push(
-          "YLR1 QT cannot be used without being the verifying authority",
-        );
+        motivations.push("YLR1 QT cannot be used without being the verifying authority");
       } else {
         var queriedLink = currentValue("queriedLink");
         var link = cmd.getLink(queriedLink);
@@ -880,20 +737,12 @@ function ESPSystem(cmd) {
           var linksToReturn = [];
 
           if (link.colour == "YL") {
-            linksToReturn.push(cmd.getRelationOf(link));
-            motivations.push(
-              "link " +
-                link.ID +
-                " is currently yellow, full relationship is returned.",
-            );
+            linksToReturn.push(...cmd.getRelationOf(link));
+            motivations.push("link " + link.ID + " is currently yellow, full relationship is returned.");
           } else {
             linksToReturn.push(link);
             motivations.push(
-              "link " +
-                link.ID +
-                " is " +
-                link.colour +
-                ", but you are using a YLR query type so it shouldn't work but you were the verifying authority so it does. Only the full relationship is not returned since the link is not yellow anymore.",
+              "link " + link.ID + " is " + link.colour + ", but you are using a YLR query type so it shouldn't work but you were the verifying authority so it does. Only the full relationship is not returned since the link is not yellow anymore.",
             );
           }
 
@@ -902,6 +751,10 @@ function ESPSystem(cmd) {
             lowerGroup: cmd.getGroup(link.lower),
             higherGroup: cmd.getGroup(link.higher),
           });
+          //build files from the found results
+
+          const filteredFiles = cmd.getGroupsFromLinks(linksToReturn);
+          queryGraph.graphThis(queryGraph.buildGraphData(filteredFiles, linksToReturn));
         } else {
           //querytype == 'YLR2'
 
@@ -915,29 +768,24 @@ function ESPSystem(cmd) {
                   " is currently yellow, here are the link participating in the indirect paths between group " +
                   link.lower +
                   " and group " +
-                  link.higher,
+                  link.higher +
+                  ". Added to the graphs are " +
+                  link.ID +
+                  " plus the other links of it relationship",
               );
               respondWith(indirectPaths);
+
+              //build files and links from the found results
+              var links = cmd.getLinks(indirectPaths);
+              var filteredFiles = cmd.getGroupsFromLinks(links);
+              queryGraph.graphThis(queryGraph.buildGraphData(filteredFiles, links));
             } else {
-              motivations.push(
-                "link " +
-                  link.ID +
-                  " is currently yellow, but there are no indirect paths between group " +
-                  link.lower +
-                  " and group " +
-                  link.higher,
-              );
+              motivations.push("link " + link.ID + " is currently yellow, but there are no indirect paths between group " + link.lower + " and group " + link.higher);
               respondWith("no indirect paths");
             }
           } else {
+            motivations.push("link " + link.ID + " is " + link.colour + ", you can only use a YLR 2nd step query on a yellow link.");
             respondWith("error");
-            motivations.push(
-              "link " +
-                link.ID +
-                " is " +
-                link.colour +
-                ", you can only use a YLR 2nd step query on a yellow link.",
-            );
           }
         }
         //TODO if system access then run DMF query (+linked matches again) on the basis of the groups found
@@ -962,6 +810,10 @@ function ESPSystem(cmd) {
     list += "</li></p>";
     idget("MIDQueryMotivations").innerHTML = list;
   };
+
+  this.reset = function () {
+    queryGraph.reset();
+  };
 }
 
 function StorageSystem(cmd) {
@@ -977,24 +829,15 @@ function StorageSystem(cmd) {
   var saveStateName = function (name) {
     var statesNames = getStatesList();
     statesNames.add(name);
-    localStorage.setItem(
-      localstorage_entry_point,
-      JSON.stringify(statesNames, JSONStringifyReplacer),
-    );
+    localStorage.setItem(localstorage_entry_point, JSON.stringify(statesNames, JSONStringifyReplacer));
   };
 
   var getStatesList = function () {
     //returns a Set
     if (localStorage.getItem(localstorage_entry_point) == null) {
-      localStorage.setItem(
-        localstorage_entry_point,
-        JSON.stringify(new Set(), JSONStringifyReplacer),
-      );
+      localStorage.setItem(localstorage_entry_point, JSON.stringify(new Set(), JSONStringifyReplacer));
     }
-    return JSON.parse(
-      localStorage.getItem(localstorage_entry_point),
-      JSONStringifyReviver,
-    );
+    return JSON.parse(localStorage.getItem(localstorage_entry_point), JSONStringifyReviver);
   };
 
   this.refreshStatesList = function (selectName) {
@@ -1009,32 +852,40 @@ function StorageSystem(cmd) {
   };
 
   this.loadData = function (selectWithStateToLoadName, idOfInputToSaveState) {
-    var stateToLoad = currentValue(selectWithStateToLoadName);
+    const stateToLoad = currentValue(selectWithStateToLoadName);
+    esp.reset();
     cmd.reloadWith(localStorage.getItem(stateToLoad));
     idget(idOfInputToSaveState).value = stateToLoad;
   };
 
   this.importAsCurrent = function () {
+    esp.reset();
     cmd.reloadWith(idget("importExportState").value);
   };
 
   this.exportCurrentState = function () {
     idget("importExportState").value = cmd.jsonRepresentation();
   };
+
+  this.resetState = function () {
+    //a bit ugle
+    esp.reset();
+    cmd.reloadWith('{"nextSystemID":0,"nextIGID":0,"nextIFID":0,"nextLinkID":0,"files":{"dataType":"Map","value":[]},"systems":[],"links":[]}');
+  };
 }
 
-var graph = new D3ForceGraph();
-var cmd = new CMDSystem(graph);
-var esp = new ESPSystem(cmd);
+//when instanciation a D3ForceGraph the
+var stateGraph = new D3ForceGraph("graph-container", 3, 2);
+var queryGraph = new D3ForceGraph("query-graph-container", 2, 3);
+var cmd = new CMDSystem(stateGraph);
+var esp = new ESPSystem(cmd, queryGraph);
 var storage = new StorageSystem(cmd);
 
 storage.refreshStatesList("selectedSavedState");
 //init add IG button
-idget("addIGButton").innerHTML =
-  "add identity group " + cmd.getNextIGIDForButton();
+idget("addIGButton").innerHTML = "add identity group " + cmd.getNextIGIDForButton();
 
-idget("addSystemButton").innerHTML =
-  "add system " + cmd.getNextSystemIDForButton();
+idget("addSystemButton").innerHTML = "add system " + cmd.getNextSystemIDForButton();
 
 doOnClick("addSystemButton", function () {
   cmd.addSystem("addSystemButton");
@@ -1061,6 +912,9 @@ doOnClick("LMFquery", function () {
 });
 doOnClick("importLoadedState", function () {
   storage.importAsCurrent();
+});
+doOnClick("resetState", function () {
+  storage.resetState();
 });
 doOnClick("exportCurrentState", function () {
   storage.exportCurrentState();
