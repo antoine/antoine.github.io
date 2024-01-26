@@ -16,6 +16,10 @@ function D3ForceGraph() {
   context.scale(dpi, dpi);
   context.font = "bold 13px sans-serif";
 
+  this.getColorForEUIS = function (EUISID) {
+    return getColorForEUIS(EUISID);
+  };
+
   function getColorForEUIS(EUISID) {
     if (groupsColors.length > EUISID) {
       return groupsColors[EUISID];
@@ -154,7 +158,7 @@ function D3ForceGraph() {
     }
     const simulation = d3
       .forceSimulation(nodes)
-      .force("charge", d3.forceManyBody().strength(-90))
+      .force("charge", d3.forceManyBody().strength(-40))
       //center is not working yet
       .force(
         "link",

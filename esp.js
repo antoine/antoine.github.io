@@ -147,7 +147,7 @@ function CMDSystem(graph) {
       systemOption.text = system;
       select.add(systemOption);
     });
-    refreshSystemsListForMIDQuery();
+    refreshSystemsLists();
   };
 
   this.addIG = function (buttonId) {
@@ -261,17 +261,34 @@ function CMDSystem(graph) {
     regraph();
   };
 
+  var refreshSystemsLists = function () {
+    refreshSystemsListForShow();
+    refreshSystemsListForMIDQuery();
+  };
+
   var refreshSystemsListForShow = function () {
-    var span = idget("systemsListForMIDQuery");
+    const span = idget("systemsListForShow");
     span.innerHTML = "";
+    var atLeastOneSystem = false;
 
     systems.forEach(function (system) {
-      var option = document.createElement("div");
-      option.className = "form-check form-switch";
-      option.innerHTML = '<input class="form-check-input" type="checkbox" role="switch" id="system' + system + 'MIDQueryOption"> <label class="form-check-label" for="system' + system + 'MIDQueryOption">' + system + "</label>";
+      if (!atLeastOneSystem) {
+        const option = document.createElement("span");
+        option.innerHTML = "currently defined systems are: ";
+        span.appendChild(option);
+        atLeastOneSystem = true;
+      }
+      var option = document.createElement("span");
+      option.innerHTML = "system " + system;
+      option.className = "badge";
+      option.style.cssText = "background-color:" + graph.getColorForEUIS(system);
+      const space = document.createElement("span");
+      space.innerHTML = " ";
+      span.appendChild(space);
       span.appendChild(option);
     });
   };
+
   var refreshSystemsListForMIDQuery = function () {
     var span = idget("systemsListForMIDQuery");
     span.innerHTML = "";
@@ -496,7 +513,7 @@ function CMDSystem(graph) {
     refreshLinkColoursList();
     refreshSystemsOfGroupList();
     refreshQueriableLinksList();
-    refreshSystemsListForMIDQuery();
+    refreshSystemsLists();
     idget("addSystemButton").innerHTML = "add system " + nextSystemID;
     idget("addIGButton").innerHTML = "add identity group " + nextIGID;
     regraph();
