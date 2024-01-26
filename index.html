@@ -4,11 +4,19 @@
     <title>MID demonstration app</title>
     <meta charset="UTF-8" />
     <link rel="icon" href="data:," />
-    <script src="smallest-enclosing-circle.js" type="text/javascript" defer></script>
+    <script
+      src="smallest-enclosing-circle.js"
+      type="text/javascript"
+      defer
+    ></script>
     <script src="d3.v7.min.js" type="text/javascript" defer></script>
     <script src="cmd_graph.js" type="text/javascript" defer></script>
     <script src="esp.js" type="text/javascript" defer></script>
-    <link href="css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous" />
+    <link
+      href="css/bootstrap.min.css"
+      rel="stylesheet"
+      crossorigin="anonymous"
+    />
     <link href="css/custom.css" rel="stylesheet" crossorigin="anonymous" />
   </head>
   <body>
@@ -21,10 +29,32 @@
 
       <ul class="nav nav-tabs mt-2" id="myTab" role="tablist">
         <li class="nav-item" role="presentation">
-          <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true">build your data!</button>
+          <button
+            class="nav-link active"
+            id="home-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#home"
+            type="button"
+            role="tab"
+            aria-controls="home"
+            aria-selected="true"
+          >
+            build your data!
+          </button>
         </li>
         <li class="nav-item" role="presentation">
-          <button class="nav-link" id="queryMID-tab" data-bs-toggle="tab" data-bs-target="#queryMID" type="button" role="tab" aria-controls="queryMID" aria-selected="false">query your MID!</button>
+          <button
+            class="nav-link"
+            id="queryMID-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#queryMID"
+            type="button"
+            role="tab"
+            aria-controls="queryMID"
+            aria-selected="false"
+          >
+            query your MID!
+          </button>
         </li>
         <!--
         <li class="nav-item" role="presentation">
@@ -36,15 +66,27 @@
       </ul>
 
       <div class="tab-content" id="myTabContent">
-        <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
+        <div
+          class="tab-pane fade show active"
+          id="home"
+          role="tabpanel"
+          aria-labelledby="home-tab"
+        >
           <div class="row mt-1">
             <div class="col-6">
+              build your own dataset
               <!--
               <textarea class="form-control" rows="20" id="query"></textarea>
               -->
               <p>
                 <!-- TODO add system button -->
-                <button type="button" id="addSystemButton" class="btn btn-primary mt-1">add System</button>
+                <button
+                  type="button"
+                  id="addSystemButton"
+                  class="btn btn-primary mt-1"
+                >
+                  add System
+                </button>
                 <span id="systemsListForShow"></span>
               </p>
               <p>
@@ -52,7 +94,13 @@
                 belonging to system
                 <select id="systemOfGroup"></select>
                 please
-                <button type="button" id="addIGButton" class="btn btn-primary mt-1">add Identiy Group</button>
+                <button
+                  type="button"
+                  id="addIGButton"
+                  class="btn btn-primary mt-1"
+                >
+                  add Identiy Group
+                </button>
               </p>
 
               <p>
@@ -63,7 +111,13 @@
                 add a
                 <select id="linkColour"></select>
                 link
-                <button type="button" id="addLinkButton" class="btn btn-primary mt-1">add link</button>
+                <button
+                  type="button"
+                  id="addLinkButton"
+                  class="btn btn-primary mt-1"
+                >
+                  add link
+                </button>
               </p>
             </div>
             <div class="col-6">
@@ -71,36 +125,94 @@
               <div class="row mt-1">
                 <div class="col-6">
                   <div class="input-group mb-3">
-                    <input type="text" id="stateName" class="form-control" placeholder="identifier of this dataset" />
-                    <button type="button" id="saveData" class="btn btn-success">save as!</button>
+                    <input
+                      type="text"
+                      id="stateName"
+                      class="form-control"
+                      placeholder="identifier of this dataset"
+                    />
+                    <button type="button" id="saveData" class="btn btn-success">
+                      save as!
+                    </button>
                   </div>
                 </div>
                 <div class="col-6">
                   <div class="input-group mb-3">
-                    <select class="form-select" id="selectedSavedState"></select>
-                    <button type="button" id="loadData" class="btn btn-success">load this!</button>
+                    <select
+                      class="form-select"
+                      id="selectedSavedState"
+                    ></select>
+                    <button type="button" id="loadData" class="btn btn-success">
+                      load this!
+                    </button>
                   </div>
                 </div>
               </div>
               <!-- Button trigger modal -->
-              <!-- Button trigger modal -->
-              <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#exampleModal">import/export</button>
+              <button
+                type="button"
+                class="btn btn-success"
+                data-bs-toggle="modal"
+                data-bs-target="#exampleModal"
+              >
+                import/export
+              </button>
+              <button type="button" id="resetState" class="btn btn-danger">
+                reset current state
+              </button>
 
               <!-- Modal -->
-              <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+              <div
+                class="modal fade"
+                id="exampleModal"
+                tabindex="-1"
+                aria-labelledby="exampleModalLabel"
+                aria-hidden="true"
+              >
                 <div class="modal-dialog modal-lg">
                   <div class="modal-content">
                     <div class="modal-header">
-                      <h1 class="modal-title fs-5" id="exampleModalLabel">external state management</h1>
-                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      <h1 class="modal-title fs-5" id="exampleModalLabel">
+                        external state management
+                      </h1>
+                      <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"
+                      ></button>
                     </div>
                     <div class="modal-body">
-                      <textarea class="form-control" id="importExportState" placeholder="current state to export, or remote state to import" id="floatingTextarea2" style="height: 100px"></textarea>
+                      <textarea
+                        class="form-control"
+                        id="importExportState"
+                        placeholder="current state to export, or remote state to import"
+                        id="floatingTextarea2"
+                        style="height: 100px"
+                      ></textarea>
                     </div>
                     <div class="modal-footer">
-                      <button type="button" class="btn btn-success" id="exportCurrentState">export current</button>
-                      <button type="button" class="btn btn-success" id="importLoadedState">import as current</button>
-                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                      <button
+                        type="button"
+                        class="btn btn-success"
+                        id="exportCurrentState"
+                      >
+                        export current
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-success"
+                        id="importLoadedState"
+                      >
+                        import as current
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal"
+                      >
+                        Close
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -108,7 +220,12 @@
             </div>
           </div>
         </div>
-        <div class="tab-pane fade" id="queryMID" role="tabpanel" aria-labelledby="queryMID-tab">
+        <div
+          class="tab-pane fade"
+          id="queryMID"
+          role="tabpanel"
+          aria-labelledby="queryMID-tab"
+        >
           <div class="row mt-1">
             <div class="col-12">
               <p>
@@ -127,10 +244,13 @@
                 <input type="checkbox" id="asVerifierOfTheLink" checked />
               </p>
               <p style="display: none">
-                By the way, it does so happen that I have access to the following systems
+                By the way, it does so happen that I have access to the
+                following systems
                 <span id="systemsListForMIDQuery"></span>
               </p>
-              <button type="button" id="LMFquery" class="btn btn-primary mt-1">fetch!</button>
+              <button type="button" id="LMFquery" class="btn btn-primary mt-1">
+                fetch!
+              </button>
             </div>
           </div>
           <div class="row mt-1">
@@ -142,7 +262,12 @@
             </div>
           </div>
         </div>
-        <div class="tab-pane fade" id="queryCIR" role="tabpanel" aria-labelledby="queryCIR-tab">
+        <div
+          class="tab-pane fade"
+          id="queryCIR"
+          role="tabpanel"
+          aria-labelledby="queryCIR-tab"
+        >
           <div class="row mt-1">
             <div class="col-12">
               <p>
@@ -152,7 +277,13 @@
                 <select id="queriedGroups" multiple></select>
 
                 <br />
-                <button type="button" id="DMFquery" class="btn btn-primary mt-1">fetch!</button>
+                <button
+                  type="button"
+                  id="DMFquery"
+                  class="btn btn-primary mt-1"
+                >
+                  fetch!
+                </button>
               </p>
             </div>
           </div>
