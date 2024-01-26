@@ -115,7 +115,7 @@ function setQuery(id, json) {
 }
 */
 
-function CMDSystem() {
+function CMDSystem(graph) {
   //data structure
   var nextSystemID = 0;
   var nextIGID = 0;
@@ -196,6 +196,7 @@ function CMDSystem() {
     cleanSelect(select);
     files.forEach(function (file) {
       file.groups.forEach(function (freeGroup) {
+        //TODO if already 2 yellow between them then the right IG should be removed
         if (freeGroup.IGID != currentlyOnLeft && freeGroup.EUISID != leftGroup.EUISID) {
           var groupOption = document.createElement("option");
           groupOption.text = freeGroup.IGID;
@@ -260,6 +261,17 @@ function CMDSystem() {
     regraph();
   };
 
+  var refreshSystemsListForShow = function () {
+    var span = idget("systemsListForMIDQuery");
+    span.innerHTML = "";
+
+    systems.forEach(function (system) {
+      var option = document.createElement("div");
+      option.className = "form-check form-switch";
+      option.innerHTML = '<input class="form-check-input" type="checkbox" role="switch" id="system' + system + 'MIDQueryOption"> <label class="form-check-label" for="system' + system + 'MIDQueryOption">' + system + "</label>";
+      span.appendChild(option);
+    });
+  };
   var refreshSystemsListForMIDQuery = function () {
     var span = idget("systemsListForMIDQuery");
     span.innerHTML = "";
@@ -701,7 +713,7 @@ function CMDSystem() {
 
   var regraph = function () {
     //TODO fix ugly global space usage
-    graphThis(getGraphData());
+    graph.graphThis(getGraphData());
   };
 }
 
@@ -819,7 +831,8 @@ function StorageSystem(cmd) {
   };
 }
 
-var cmd = new CMDSystem();
+var graph = new D3ForceGraph();
+var cmd = new CMDSystem(graph);
 var esp = new ESPSystem(cmd);
 var storage = new StorageSystem(cmd);
 
