@@ -3,14 +3,7 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
   const width = 1296;
   const height = width / ratio;
 
-  const groupsColors = [
-    "#7018d3",
-    "#6c4f00",
-    "#f98517",
-    "#00603d",
-    "#680000",
-    "#002f64",
-  ];
+  const groupsColors = ["#7018d3", "#6c4f00", "#f98517", "#00603d", "#680000", "#002f64"];
 
   var canvas = document.createElement("canvas");
   canvas.style.background = "#eee"; // a valid CSS colour.
@@ -39,13 +32,11 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
   this.reset = function () {
     //TODO clearRect does not clear the canvas the first time around... why?
     //context.clearRect(0, 0, width, height);
-    document.getElementById(graphContainerId).style.cssText =
-      "visibility:hidden";
+    document.getElementById(graphContainerId).style.cssText = "visibility:hidden";
   };
 
   this.graphThis = function (data) {
-    document.getElementById(graphContainerId).style.cssText =
-      "visibility:visible";
+    document.getElementById(graphContainerId).style.cssText = "visibility:visible";
     const links = data.links.map((d) => Object.create(d));
     const nodes = data.nodes.map((d) => Object.create(d));
 
@@ -78,13 +69,10 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
             startFrom = d.target;
             finishAt = d.source;
           }
-          var startAt = [startFrom.x, startFrom.y];
+          context.moveTo(startFrom.x, startFrom.y);
           twoArcs(startFrom, finishAt).forEach(function (samplePoint) {
-            context.moveTo(startAt[0], startAt[1]);
             context.lineTo(samplePoint[0], samplePoint[1]);
-            startAt = samplePoint;
           });
-          context.moveTo(startAt[0], startAt[1]);
           context.lineTo(finishAt.x, finishAt.y);
         } else {
           //3 links, shouldn't be more but all links above the third will overlap
@@ -100,13 +88,10 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
               finishAt = d.source;
             }
 
-            var startAt = [startFrom.x, startFrom.y];
+            context.moveTo(startFrom.x, startFrom.y);
             twoArcs(startFrom, finishAt).forEach(function (samplePoint) {
-              context.moveTo(startAt[0], startAt[1]);
               context.lineTo(samplePoint[0], samplePoint[1]);
-              startAt = samplePoint;
             });
-            context.moveTo(startAt[0], startAt[1]);
             context.lineTo(finishAt.x, finishAt.y);
           }
         }
@@ -164,13 +149,7 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
         var circle = makeCircle(coordsOfGroupsOfFile);
         context.lineWidth = 1;
         context.beginPath();
-        context.arc(
-          circle.x,
-          circle.y,
-          circle.r + 20 * zoomFactor,
-          0,
-          2 * Math.PI,
-        );
+        context.arc(circle.x, circle.y, circle.r + 20 * zoomFactor, 0, 2 * Math.PI);
         //context.strokeStyle = "#3ca1c3";
         //context.stroke();
         context.fillStyle = "#ADD8E6";
@@ -212,12 +191,14 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
       //    .force( "collision", d3.forceCollide().radius(function (d) { return d.radius; }),)
       .on("tick", ticked);
 
-    const drag = d3
-      .drag()
-      .subject(({ x, y }) => simulation.find(x - width / 2, y - height / 2, 40))
-      .on("start", dragstarted)
-      .on("drag", dragged)
-      .on("end", dragended);
+    function dragfind(event, y) {
+      //settingt the radius of the find to null implies infinity, making the
+      //search always hit a node since a set radius doesn't always work
+      var subject = simulation.find(event.x - width / 2, event.y - height / 2, null);
+      return subject;
+    }
+
+    const drag = d3.drag().subject(dragfind).on("start", dragstarted).on("drag", dragged).on("end", dragended);
 
     function dragstarted(event) {
       if (!event.active) simulation.alphaTarget(0.3).restart();
@@ -248,7 +229,7 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
   function twoArcs(a, b) {
     //we are talking about 2 arcs, position is either 0 or 1
     //0 indicate normal slope, 1 reverse slope direction
-    return arcPoints([a.x, a.y], [b.x, b.y], 0.3, 5);
+    return arcPoints([a.x, a.y], [b.x, b.y], 0.3, 10);
   }
 
   //taken from observable
@@ -269,9 +250,7 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
       bAngle += 2 * Math.PI;
     }
 
-    let sampledPoints = d3
-      .range(aAngle, bAngle, (bAngle - aAngle) / n)
-      .map((d) => [Math.cos(d) * r + c[0], Math.sin(d) * r + c[1]]);
+    let sampledPoints = d3.range(aAngle, bAngle, (bAngle - aAngle) / n).map((d) => [Math.cos(d) * r + c[0], Math.sin(d) * r + c[1]]);
     //console.log(sampledPoints, b);
     return sampledPoints;
   }
