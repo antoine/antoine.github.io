@@ -191,6 +191,7 @@ function CMDSystem(graph) {
 
   var refreshRightIGList = function () {
     var currentlyOnLeft = currentValue("leftIG");
+    if (ifdef(currentlyOnLeft)) {
     var select = idget("rightIG");
     var leftGroup = group(currentlyOnLeft).group;
     cleanSelect(select);
@@ -204,6 +205,7 @@ function CMDSystem(graph) {
         }
       });
     });
+    }
   };
 
   this.getNextSystemIDForButton = function () {
@@ -733,6 +735,7 @@ function ESPSystem(cmd, queryGraph) {
       } else {
         var queriedLink = currentValue("queriedLink");
         var link = cmd.getLink(queriedLink);
+        if (ifdef(link)) {
         if (querytype == "YLR1") {
           var linksToReturn = [];
 
@@ -788,6 +791,10 @@ function ESPSystem(cmd, queryGraph) {
             respondWith("error");
           }
         }
+        } else {
+              motivations.push("you need to have at least a link to use the queries of this panel");
+            respondWith("error");
+        }
         //TODO if system access then run DMF query (+linked matches again) on the basis of the groups found
       }
     } else {
@@ -813,6 +820,8 @@ function ESPSystem(cmd, queryGraph) {
 
   this.reset = function () {
     queryGraph.reset();
+    idget("MIDQueryResult").innerHTML = "";
+    idget("MIDQueryMotivations").innerHTML = "";
   };
 }
 

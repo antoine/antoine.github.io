@@ -160,7 +160,7 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
     }
     const simulation = d3
       .forceSimulation(nodes)
-      .force("charge", d3.forceManyBody().strength(-40))
+      .force("charge", d3.forceManyBody().strength(-40*zoomFactor))
       //center is not working yet
       .force(
         "link",
@@ -220,11 +220,14 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
     d3.select(context.canvas).call(drag).node();
   };
 
-  // Append the SVG element.
-  //container.append(svg.node());
-  //document.getElementById("container").append(svg.node());
+  // Append the canvas element.
   document.getElementById(graphContainerId).append(canvas);
 
+
+  //HELPERS section below
+ 
+  //ARC computation
+  
   //computing arc between 2 points
   function twoArcs(a, b) {
     //we are talking about 2 arcs, position is either 0 or 1
@@ -232,7 +235,7 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
     return arcPoints([a.x, a.y], [b.x, b.y], 0.3, 10);
   }
 
-  //taken from observable
+  //taken from https://observablehq.com/@sarah37/arcs-between-two-points
   function arcPoints(a, b, r_frac, n) {
     // a: origin point
     // b: destination point
@@ -315,6 +318,7 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
     return [x, y];
   }
 
+  //translate CMDSystem dataset into graph structure
   //pure function
   this.buildGraphData = function (gFiles, gLinks) {
     const graphNodes = [];
