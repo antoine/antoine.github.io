@@ -130,13 +130,12 @@ function CMDSystem(graph) {
   //data, as constraints are assumed not to be possible because the form content was built to prevent them.
 
   this.addSystem = function (buttonId) {
-    //TODO show per system colour in the select -> need to use emojis and their
-    //limitations in terms of colours... https://blog.jim-nielsen.com/2021/styling-select-option-values/
     systems.push(nextSystemID);
     refreshSystemsOfGroupList();
     show("systemsShowroom", "systems", systems);
     nextSystemID++;
     idget(buttonId).innerHTML = "add system " + nextSystemID;
+    reflectStateInURL();
   };
 
   var refreshSystemsOfGroupList = function () {
@@ -174,7 +173,26 @@ function CMDSystem(graph) {
       nextIFID++;
       idget(buttonId).innerHTML = "add identity group " + nextIGID;
       regraph();
+      reflectStateInURL();
     }
+  };
+
+  var reflectStateInURL= function() {
+    //yes, there is a limit to the URL, don't go beyond it is my advice
+    history.pushState(null, null, "?state="+encodeURIComponent(cmd.jsonRepresentation()));
+  };
+
+  this.reloadStateFromUrl = function() {
+    const params = new Proxy(new URLSearchParams(window.location.search), {
+        get: (searchParams, prop) => searchParams.get(prop),
+    });
+    // Get the value of "some_key" in eg "https://example.com/?some_key=some_value"
+    // let value = params.some_key; // "some_value"
+    if (ifdef(params.state)) {
+    console.log("loading "+params.state);
+    this.reloadWith(params.state, false);
+    }
+
   };
 
   var refreshLeftIGList = function () {
@@ -261,6 +279,7 @@ function CMDSystem(graph) {
     refreshLinkColoursList();
     refreshQueriableLinksList();
     regraph();
+    reflectStateInURL();
   };
 
   var refreshSystemsLists = function () {
@@ -497,7 +516,7 @@ function CMDSystem(graph) {
     );
   };
 
-  this.reloadWith = function (rawState) {
+  this.reloadWith = function (rawState, refreshURL) {
     var state = JSON.parse(rawState, JSONStringifyReviver);
     files = state.files;
     systems = state.systems;
@@ -519,6 +538,9 @@ function CMDSystem(graph) {
     idget("addSystemButton").innerHTML = "add system " + nextSystemID;
     idget("addIGButton").innerHTML = "add identity group " + nextIGID;
     regraph();
+    if (refreshURL) {
+      reflectStateInURL();
+    }
   };
 
   //managing queries
@@ -863,13 +885,13 @@ function StorageSystem(cmd) {
   this.loadData = function (selectWithStateToLoadName, idOfInputToSaveState) {
     const stateToLoad = currentValue(selectWithStateToLoadName);
     esp.reset();
-    cmd.reloadWith(localStorage.getItem(stateToLoad));
+    cmd.reloadWith(localStorage.getItem(stateToLoad), true);
     idget(idOfInputToSaveState).value = stateToLoad;
   };
 
   this.importAsCurrent = function () {
     esp.reset();
-    cmd.reloadWith(idget("importExportState").value);
+    cmd.reloadWith(idget("importExportState").value, true);
   };
 
   this.exportCurrentState = function () {
@@ -879,7 +901,7 @@ function StorageSystem(cmd) {
   this.resetState = function () {
     //a bit ugle
     esp.reset();
-    cmd.reloadWith('{"nextSystemID":0,"nextIGID":0,"nextIFID":0,"nextLinkID":0,"files":{"dataType":"Map","value":[]},"systems":[],"links":[]}');
+    cmd.reloadWith('{"nextSystemID":0,"nextIGID":0,"nextIFID":0,"nextLinkID":0,"files":{"dataType":"Map","value":[]},"systems":[],"links":[]}', true);
   };
 }
 
@@ -936,3 +958,13 @@ idget("leftIG").onchange = function () {
 idget("rightIG").onchange = function () {
   cmd.rightIGChosen();
 };
+
+addEventListener("popstate", function(e) { 
+  cmd.reloadStateFromUrl();
+});
+
+addEventListener("load", function(e) { 
+  console.log("loading done!");
+  cmd.reloadStateFromUrl();
+});
+

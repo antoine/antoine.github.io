@@ -65,7 +65,7 @@
         -->
         <li class="nav-item" role="presentation">
           <button class="nav-link" id="sharePanel-tab" data-bs-toggle="tab" data-bs-target="#sharePanel" type="button" role="tab" aria-controls="sharePanel" aria-selected='false' >
-           sharing is caring
+          state management 
           </button>
         </li>
       </ul>
@@ -250,8 +250,15 @@
           aria-labelledby="sharePanel-tab"
         >
           <div class="row mt-1">
-            <div class="col-12">
-              exchange dataset with others using the 
+            <div class="col-6">
+              <h3>Local state management</h3> 
+              <p>
+              The state management functionalities of the "build your data" tab make use of the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage">local storage facilities</a> of modern browsers to maintain a local database of cases one would like to curate.</p>
+            </div>
+            <div class="col-6">
+              <h4>Sharing state with other users.</h4>
+              <p>
+              Exchange dataset with others using the 
               <button
                 type="button"
                 class="btn btn-success"
@@ -261,6 +268,10 @@
                 import/export
               </button>
                 facility.
+                </p>
+                <p>
+          One can also share the current URL to another user of the same server. 
+                </p>
             </div>
           </div>
           <div
