@@ -345,7 +345,7 @@ function CMDSystem(graph) {
     cleanSelect(select);
     links.forEach(function (link) {
       var option = document.createElement("option");
-      option.text = link.colour +" "+link.lower+"↔"+link.higher;
+      option.text = nameThisLink(link);
       option.value = link.ID;
       select.add(option);
     });
@@ -761,7 +761,18 @@ function CMDSystem(graph) {
     });
     return selectedLinks;
   };
+
+  this.nameThisLink = function (link) {
+    return nameThisLink(link);
+  };
+ 
+  var nameThisLink = function (link) {
+    return link.colour +" "+link.lower+"↔"+link.higher;
+  };
+
 }
+
+
 
 function ESPSystem(cmd, queryGraph) {
   this.fetchLink = function () {
@@ -774,19 +785,20 @@ function ESPSystem(cmd, queryGraph) {
       if (querytype == "YLR1" || querytype == "YLR2") {
         //if not verifying authority then the profile cannot be used
         if (!idget("asVerifierOfTheLink").checked) {
-          respondWith("error");
-          motivations.push("YLR1 QT cannot be used without being the verifying authority");
+              respondWith("access denied");
+          motivations.push("if you are not going to be the verifying authority then YLR QTs cannot be used");
         } else {
+          motivations.push("you are the verifying authority");
           if (querytype == "YLR1") {
             var linksToReturn = [];
 
             if (link.colour == "YL") {
               linksToReturn.push(...cmd.getRelationOf(link));
-              motivations.push("link " + link.ID + " is currently yellow, full relationship is returned.");
+              motivations.push("link " + cmd.nameThisLink(link) + " is currently yellow, full relationship is returned.");
             } else {
               linksToReturn.push(link);
               motivations.push(
-                "link " + link.ID + " is " + link.colour + ", but you are using a YLR query type so it shouldn't work but you were the verifying authority so it does. Only the full relationship is not returned since the link is not yellow anymore.",
+                "link " + cmd.nameThisLink(link) + " is " + link.colour + ", as the verifying authority access to that link only is granted.",
               );
             }
 
@@ -804,18 +816,21 @@ function ESPSystem(cmd, queryGraph) {
 
             if (link.colour == "YL") {
               //walk all paths between the 2 groups of link which are not direct
+                motivations.push("link " + cmd.nameThisLink(link) + " is currently yellow");
               var indirectPaths = cmd.indirectLinksOf(link, false);
               if (indirectPaths.length > 0) {
                 motivations.push(
-                  "link " +
-                    link.ID +
-                    " is currently yellow, here are the link participating in the indirect paths between group " +
+                  "access to link " +
+                    cmd.nameThisLink(link) +
+                    " is granted, here are the link participating in the indirect paths between group " +
                     link.lower +
                     " and group " +
-                    link.higher +
-                    ". Added to the graphs are " +
-                    link.ID +
-                    " plus the other links of it relationship",
+                    link.higher 
+                );
+                motivations.push(
+                    "We've added to the graph " +
+                    cmd.nameThisLink(link) +
+                    " plus the other non-yellow links of it relationship if any, if that's all there is to see it means there are no indirect paths.",
                 );
                 respondWith(indirectPaths);
 
@@ -824,12 +839,13 @@ function ESPSystem(cmd, queryGraph) {
                 var filteredFiles = cmd.getGroupsFromLinks(links);
                 queryGraph.graphThis(queryGraph.buildGraphData(filteredFiles, links));
               } else {
-                motivations.push("link " + link.ID + " is currently yellow, but there are no indirect paths between group " + link.lower + " and group " + link.higher);
+                //we shouldn't come here anymore, as we now include the source link in the response
+                motivations.push("access to link " + cmd.nameThisLink(link) + " is granted, but there are no indirect paths between group " + link.lower + " and group " + link.higher);
                 respondWith("no indirect paths");
               }
             } else {
-              motivations.push("link " + link.ID + " is " + link.colour + ", you can only use a YLR 2nd step query on a yellow link.");
-              respondWith("error");
+              motivations.push("link " + cmd.nameThisLink(link) + " is " + link.colour + ", you can only use a YLR 2nd step query on a yellow link.");
+              respondWith("access denied");
             }
           }
           //TODO if system access then run DMF query (+linked matches again) on the basis of the groups found
@@ -838,7 +854,7 @@ function ESPSystem(cmd, queryGraph) {
           if (link.colour == "MRL" || link.colour == "NMRL") {
 
             motivations.push(
-              "link " + link.ID + " is " + link.colour + ", perfect!",
+              "link " + cmd.nameThisLink(link) + " is " + link.colour + ", link is returned but not the relationship",
             );
 
             respondWith({
@@ -851,18 +867,19 @@ function ESPSystem(cmd, queryGraph) {
             const filteredFiles = cmd.getGroupsFromLinks([link]);
             queryGraph.graphThis(queryGraph.buildGraphData(filteredFiles, [link]));
           } else {
-            motivations.push("link " + link.ID + " is " + link.colour + ", you can only use a YLR 2nd step query on a yellow link.");
-            respondWith("error");
+            motivations.push("link " + cmd.nameThisLink(link) + " is " + link.colour + ", you can only use a RLl query on a red link.");
+              respondWith("access denied");
           }
       } else if (querytype == "R1" || querytype == "R2") {
           if (link.colour == "YL") {
-            respondWith("error");
-            motivations.push("link " + link.ID + " is " + link.colour + ", you can only access it using an YLR profile and not a rectification profile.");
+            motivations.push("link " + cmd.nameThisLink(link) + " is " + link.colour + ", you can only access it using an YLR profile and not a rectification profile.");
+              respondWith("access denied");
           } else {
+            motivations.push("link " + cmd.nameThisLink(link) + " is not yellow");
             if (querytype == "R1") {
 
               motivations.push(
-                "link " + link.ID + " is " + link.colour + ", it can be accessed for rectification purposes.",
+                "access to link " + cmd.nameThisLink(link) + " granted.",
               );
             
 
@@ -882,15 +899,13 @@ function ESPSystem(cmd, queryGraph) {
               var indirectPaths = cmd.indirectLinksOf(link, true);
               if (indirectPaths.length > 0) {
                 motivations.push(
-                  "link " +
-                    link.ID +
-                    " is currently not yellow, here are the link participating in the indirect paths between group " +
+                "access to link " + cmd.nameThisLink(link) + " granted, here are the link participating in the indirect paths between group " +
                     link.lower +
                     " and group " +
-                    link.higher +
-                    ". Added to the graphs are " +
-                    link.ID +
-                    " plus the other links of it relationship",
+                    link.higher); 
+                motivations.push(
+                    " We've added to the graph " +
+                    cmd.nameThisLink(link) +", if that's all there is to see then it means there are no indirect path.",
                 );
                 respondWith(indirectPaths);
 
@@ -899,7 +914,7 @@ function ESPSystem(cmd, queryGraph) {
                 var filteredFiles = cmd.getGroupsFromLinks(links);
                 queryGraph.graphThis(queryGraph.buildGraphData(filteredFiles, links));
               } else {
-                motivations.push("link " + link.ID + " is currently not yellow, but there are no indirect paths between group " + link.lower + " and group " + link.higher);
+                motivations.push("access to link " + cmd.nameThisLink(link) + " is granted, but there are no indirect paths between group " + link.lower + " and group " + link.higher);
                 respondWith("no indirect paths");
               }
           //TODO if system access then run DMF query (+linked matches again) on the basis of the groups found
@@ -922,11 +937,11 @@ function ESPSystem(cmd, queryGraph) {
   };
 
   var motivateResponseWith = function (motivations) {
-    var list = "<p>Motivations:<li>";
+    var list = "<p>Motivations:<ul>";
     motivations.forEach(function (motivation) {
-      list += "<ul>" + motivation + "</ul>";
+      list += "<li>" + motivation + "</li>";
     });
-    list += "</li></p>";
+    list += "</ul></p>";
     idget("MIDQueryMotivations").innerHTML = list;
   };
 
