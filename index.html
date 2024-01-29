@@ -39,7 +39,7 @@
             aria-controls="home"
             aria-selected="true"
           >
-            build your data!
+            build your data
           </button>
         </li>
         <li class="nav-item" role="presentation">
@@ -53,16 +53,21 @@
             aria-controls="queryMID"
             aria-selected="false"
           >
-            query your MID!
+            query your links
           </button>
         </li>
         <!--
         <li class="nav-item" role="presentation">
           <button class="nav-link" id="queryCIR-tab" data-bs-toggle="tab" data-bs-target="#queryCIR" type="button" role="tab" aria-controls="queryCIR" aria-selected='false' >
-           query your CIR! 
+           query your identity groups
           </button>
         </li>
         -->
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="sharePanel-tab" data-bs-toggle="tab" data-bs-target="#sharePanel" type="button" role="tab" aria-controls="sharePanel" aria-selected='false' >
+          state management 
+          </button>
+        </li>
       </ul>
 
       <div class="tab-content" id="myTabContent">
@@ -74,19 +79,29 @@
         >
           <div class="row mt-1">
             <div class="col-6">
-              build your own dataset
               <!--
               <textarea class="form-control" rows="20" id="query"></textarea>
               -->
               <p>
                 <!-- TODO add system button -->
+                
+                  <div class="input-group mb-3">
+                    <input
+                      type="text"
+                      id="systemName"
+                      class="form-control"
+                      placeholder="identifier of this system"
+                    />  
                 <button
                   type="button"
                   id="addSystemButton"
-                  class="btn btn-primary mt-1"
+                  class="btn btn-primary"
                 >
                   add System
                 </button>
+                  </div>
+              </p>
+              <p>
                 <span id="systemsListForShow"></span>
               </p>
               <p>
@@ -121,7 +136,7 @@
               </p>
             </div>
             <div class="col-6">
-              State management
+              local state management
               <div class="row mt-1">
                 <div class="col-6">
                   <div class="input-group mb-3">
@@ -149,74 +164,12 @@
                 </div>
               </div>
               <!-- Button trigger modal -->
-              <button
-                type="button"
-                class="btn btn-success"
-                data-bs-toggle="modal"
-                data-bs-target="#exampleModal"
-              >
-                import/export
-              </button>
               <button type="button" id="resetState" class="btn btn-danger">
                 reset current state
               </button>
 
               <!-- Modal -->
-              <div
-                class="modal fade"
-                id="exampleModal"
-                tabindex="-1"
-                aria-labelledby="exampleModalLabel"
-                aria-hidden="true"
-              >
-                <div class="modal-dialog modal-lg">
-                  <div class="modal-content">
-                    <div class="modal-header">
-                      <h1 class="modal-title fs-5" id="exampleModalLabel">
-                        external state management
-                      </h1>
-                      <button
-                        type="button"
-                        class="btn-close"
-                        data-bs-dismiss="modal"
-                        aria-label="Close"
-                      ></button>
-                    </div>
-                    <div class="modal-body">
-                      <textarea
-                        class="form-control"
-                        id="importExportState"
-                        placeholder="current state to export, or remote state to import"
-                        id="floatingTextarea2"
-                        style="height: 100px"
-                      ></textarea>
-                    </div>
-                    <div class="modal-footer">
-                      <button
-                        type="button"
-                        class="btn btn-success"
-                        id="exportCurrentState"
-                      >
-                        export current
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-success"
-                        id="importLoadedState"
-                      >
-                        import as current
-                      </button>
-                      <button
-                        type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal"
-                      >
-                        Close
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              
             </div>
           </div>
         </div>
@@ -235,13 +188,12 @@
                 <select id="LMFQueryTypes">
                   <option value="YLR1">YLR - 1st step</option>
                   <option value="YLR2">YLR - 2nd step</option>
-                  <!--
                 <option value="RL">Red link</option>
-                <option value="R1">Rectification - 1<sup>st</sup> step</option>
-                <option value="R2">Rectification - 2<sup>nd</sup> step</option>
-                --></select>
-                as the verifying authority
-                <input type="checkbox" id="asVerifierOfTheLink" checked />
+                <option value="R1">For rectification - 1st step</option>
+                <option value="R2">For rectification - 2nd step</option>
+                </select>
+                <span id='verifyingAuthority'> as the verifying authority <input type="checkbox" id="asVerifierOfTheLink" checked />
+                </span>
               </p>
               <p style="display: none">
                 By the way, it does so happen that I have access to the
@@ -300,6 +252,94 @@
             </div>
           </div>
         </div>
+        <div
+          class="tab-pane fade"
+          id="sharePanel"
+          role="tabpanel"
+          aria-labelledby="sharePanel-tab"
+        >
+          <div class="row mt-1">
+            <div class="col-6">
+              <h3>Local state management</h3> 
+              <p>
+              The state management functionalities of the "build your data" tab make use of the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage">local storage facilities</a> of modern browsers to maintain a local database of cases one would like to curate.</p>
+            </div>
+            <div class="col-6">
+              <h4>Sharing state with other users.</h4>
+              <p>
+              Exchange dataset with others using the 
+              <button
+                type="button"
+                class="btn btn-success"
+                data-bs-toggle="modal"
+                data-bs-target="#exampleModal"
+              >
+                import/export
+              </button>
+                facility.
+                </p>
+                <p>
+          One can also share the current URL to another user of the same server. 
+                </p>
+            </div>
+          </div>
+          <div
+            class="modal fade"
+            id="exampleModal"
+            tabindex="-1"
+            aria-labelledby="exampleModalLabel"
+            aria-hidden="true"
+          >
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h1 class="modal-title fs-5" id="exampleModalLabel">
+                    external state management
+                  </h1>
+                  <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"
+                  ></button>
+                </div>
+                <div class="modal-body">
+                  <textarea
+                    class="form-control"
+                    id="importExportState"
+                    placeholder="current state to export, or remote state to import"
+                    id="floatingTextarea2"
+                    style="height: 100px"
+                  ></textarea>
+                </div>
+                <div class="modal-footer">
+                  <button
+                    type="button"
+                    class="btn btn-success"
+                    id="exportCurrentState"
+                  >
+                    export current
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-success"
+                    id="importLoadedState"
+                  >
+                    import as current
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- END OF THE PANELS -->
         <div>
           <hr />
           Current state:
