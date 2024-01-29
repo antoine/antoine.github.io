@@ -13,7 +13,7 @@ function jsonfrom(id) {
 function doOnClick(id, dowhat) {
   idget(id).onclick = dowhat;
 }
-function show(showroom, name, data) {
+function printForUser(showroom, name, data) {
   if (typeof data === "string" || data instanceof String) {
     idget(showroom).innerHTML = "<p>" + name + "</p><p>" + data + "</p>";
   } else {
@@ -107,6 +107,14 @@ function visiblelog(data, returnedToESPUser) {
   }
 }
 
+function show(id) {
+idget(id).style.display='initial';
+}
+
+function hide(id) {
+idget(id).style.display='none';
+}
+
 /*
 function setQuery(id, json) {
   doOnClick(id, function () {
@@ -130,9 +138,17 @@ function CMDSystem(graph) {
   //data, as constraints are assumed not to be possible because the form content was built to prevent them.
 
   this.addSystem = function (buttonId) {
-    systems.push(nextSystemID);
+    var systemNameInput = idget("systemName");
+    var systemName;
+
+    if (systemNameInput.value == "") {
+      systemName = 'system '+nextSystemID;
+    } else {
+      systemName = systemNameInput.value + "_"+nextSystemID;
+    }
+    systems.push({EUISID: nextSystemID, name:systemName});
     refreshSystemsOfGroupList();
-    show("systemsShowroom", "systems", systems);
+    printForUser("systemsShowroom", "systems", systems);
     nextSystemID++;
     idget(buttonId).innerHTML = "add system " + nextSystemID;
     reflectStateInURL();
@@ -143,7 +159,8 @@ function CMDSystem(graph) {
     cleanSelect(select);
     systems.forEach(function (system) {
       var systemOption = document.createElement("option");
-      systemOption.text = system;
+      systemOption.text = system.name;
+      systemOption.value = system.EUISID;
       select.add(systemOption);
     });
     refreshSystemsLists();
@@ -167,8 +184,8 @@ function CMDSystem(graph) {
       refreshLeftIGList();
       refreshRightIGList();
       refreshLinkColoursList();
-      show("systemsShowroom", "systems", systems);
-      show("groupsShowroom", "individual files", files);
+      printForUser("systemsShowroom", "systems", systems);
+      printForUser("groupsShowroom", "individual files", files);
       nextIGID++;
       nextIFID++;
       idget(buttonId).innerHTML = "add identity group " + nextIGID;
@@ -209,8 +226,9 @@ function CMDSystem(graph) {
 
   var refreshRightIGList = function () {
     var currentlyOnLeft = currentValue("leftIG");
-    if (ifdef(currentlyOnLeft)) {
     var select = idget("rightIG");
+    cleanSelect(select);
+    if (ifdef(currentlyOnLeft)) {
     var leftGroup = group(currentlyOnLeft).group;
     cleanSelect(select);
     files.forEach(function (file) {
@@ -272,9 +290,9 @@ function CMDSystem(graph) {
       nextLinkID++;
     }
 
-    show("systemsShowroom", "systems", systems);
-    show("linksShowroom", "links", links);
-    show("groupsShowroom", "individual files", files);
+    printForUser("systemsShowroom", "systems", systems);
+    printForUser("linksShowroom", "links", links);
+    printForUser("groupsShowroom", "individual files", files);
     refreshRightIGList();
     refreshLinkColoursList();
     refreshQueriableLinksList();
@@ -295,14 +313,14 @@ function CMDSystem(graph) {
     systems.forEach(function (system) {
       if (!atLeastOneSystem) {
         const option = document.createElement("span");
-        option.innerHTML = "currently defined systems are: ";
+        option.innerHTML = "currently defined are: ";
         span.appendChild(option);
         atLeastOneSystem = true;
       }
       var option = document.createElement("span");
-      option.innerHTML = "system " + system;
+      option.innerHTML = system.name;
       option.className = "badge";
-      option.style.cssText = "background-color:" + graph.getColorForEUIS(system);
+      option.style.cssText = "background-color:" + graph.getColorForEUIS(system.EUISID);
       const space = document.createElement("span");
       space.innerHTML = " ";
       span.appendChild(space);
@@ -317,16 +335,17 @@ function CMDSystem(graph) {
     systems.forEach(function (system) {
       var option = document.createElement("div");
       option.className = "form-check form-switch";
-      option.innerHTML = '<input class="form-check-input" type="checkbox" role="switch" id="system' + system + 'MIDQueryOption"> <label class="form-check-label" for="system' + system + 'MIDQueryOption">' + system + "</label>";
+      option.innerHTML = '<input class="form-check-input" type="checkbox" role="switch" id="system' + system.EUISID + 'MIDQueryOption"> <label class="form-check-label" for="system' + system.EUISID + 'MIDQueryOption">' + system.name + "</label>";
       span.appendChild(option);
     });
   };
+
   var refreshQueriableLinksList = function () {
     var select = idget("queriedLink");
     cleanSelect(select);
     links.forEach(function (link) {
       var option = document.createElement("option");
-      option.text = link.ID;
+      option.text = link.colour +" "+link.lower+"↔"+link.higher;
       option.value = link.ID;
       select.add(option);
     });
@@ -526,9 +545,9 @@ function CMDSystem(graph) {
     nextIFID = state.nextIFID;
     nextLinkID = state.nextLinkID;
 
-    show("systemsShowroom", "systems", systems);
-    show("linksShowroom", "links", links);
-    show("groupsShowroom", "individual files", files);
+    printForUser("systemsShowroom", "systems", systems);
+    printForUser("linksShowroom", "links", links);
+    printForUser("groupsShowroom", "individual files", files);
     refreshLeftIGList();
     refreshRightIGList();
     refreshLinkColoursList();
@@ -572,18 +591,18 @@ function CMDSystem(graph) {
     return group(groupID).group;
   };
 
-  this.indirectLinksOf = function (link) {
+  this.indirectLinksOf = function (link, noYellow) {
     //from lower to higher
     //console.log("looking for all indirect links from " + link.lower + " to " + link.higher);
     var linksWeDoNotWantToSee = [];
     //the links of the relation is not strictly required when doing 2nd step
     //query (because 1st step will have provided it), but it help provide a context to the graph
     //in this particular simulation, commenting out for now
-    /*
     this.getRelationOf(link).forEach(function (linkOfTheRelation) {
-      linksWeDoNotWantToSee.push(linkOfTheRelation.ID);
+      if (noYellow && linkOfTheRelation.colour == 'YL') {
+        linksWeDoNotWantToSee.push(linkOfTheRelation.ID);
+      }
     });
-    */
     var allPaths = indirectLinksOf(link.higher, link.lower, null, [], [], 2, linksWeDoNotWantToSee);
     //same as above, the yellow link being the query input is not strictly
     //required to be returned, but it helps the simulation work better
@@ -749,86 +768,157 @@ function ESPSystem(cmd, queryGraph) {
     queryGraph.reset();
     var querytype = currentValue("LMFQueryTypes");
     var motivations = [];
-    if (querytype == "YLR1" || querytype == "YLR2") {
-      //if not verifying authority then the profile cannot be used
-      if (!idget("asVerifierOfTheLink").checked) {
-        respondWith("error");
-        motivations.push("YLR1 QT cannot be used without being the verifying authority");
-      } else {
-        var queriedLink = currentValue("queriedLink");
-        var link = cmd.getLink(queriedLink);
-        if (ifdef(link)) {
-        if (querytype == "YLR1") {
-          var linksToReturn = [];
-
-          if (link.colour == "YL") {
-            linksToReturn.push(...cmd.getRelationOf(link));
-            motivations.push("link " + link.ID + " is currently yellow, full relationship is returned.");
-          } else {
-            linksToReturn.push(link);
-            motivations.push(
-              "link " + link.ID + " is " + link.colour + ", but you are using a YLR query type so it shouldn't work but you were the verifying authority so it does. Only the full relationship is not returned since the link is not yellow anymore.",
-            );
-          }
-
-          respondWith({
-            links: linksToReturn,
-            lowerGroup: cmd.getGroup(link.lower),
-            higherGroup: cmd.getGroup(link.higher),
-          });
-          //build files from the found results
-
-          const filteredFiles = cmd.getGroupsFromLinks(linksToReturn);
-          queryGraph.graphThis(queryGraph.buildGraphData(filteredFiles, linksToReturn));
+    var queriedLink = currentValue("queriedLink");
+    var link = cmd.getLink(queriedLink);
+    if (ifdef(link)) {
+      if (querytype == "YLR1" || querytype == "YLR2") {
+        //if not verifying authority then the profile cannot be used
+        if (!idget("asVerifierOfTheLink").checked) {
+          respondWith("error");
+          motivations.push("YLR1 QT cannot be used without being the verifying authority");
         } else {
-          //querytype == 'YLR2'
+          if (querytype == "YLR1") {
+            var linksToReturn = [];
 
-          if (link.colour == "YL") {
-            //walk all paths between the 2 groups of link which are not direct
-            var indirectPaths = cmd.indirectLinksOf(link);
-            if (indirectPaths.length > 0) {
-              motivations.push(
-                "link " +
-                  link.ID +
-                  " is currently yellow, here are the link participating in the indirect paths between group " +
-                  link.lower +
-                  " and group " +
-                  link.higher +
-                  ". Added to the graphs are " +
-                  link.ID +
-                  " plus the other links of it relationship",
-              );
-              respondWith(indirectPaths);
-
-              //build files and links from the found results
-              var links = cmd.getLinks(indirectPaths);
-              var filteredFiles = cmd.getGroupsFromLinks(links);
-              queryGraph.graphThis(queryGraph.buildGraphData(filteredFiles, links));
+            if (link.colour == "YL") {
+              linksToReturn.push(...cmd.getRelationOf(link));
+              motivations.push("link " + link.ID + " is currently yellow, full relationship is returned.");
             } else {
-              motivations.push("link " + link.ID + " is currently yellow, but there are no indirect paths between group " + link.lower + " and group " + link.higher);
-              respondWith("no indirect paths");
+              linksToReturn.push(link);
+              motivations.push(
+                "link " + link.ID + " is " + link.colour + ", but you are using a YLR query type so it shouldn't work but you were the verifying authority so it does. Only the full relationship is not returned since the link is not yellow anymore.",
+              );
             }
+
+            respondWith({
+              links: linksToReturn,
+              lowerGroup: cmd.getGroup(link.lower),
+              higherGroup: cmd.getGroup(link.higher),
+            });
+            //build files from the found results
+
+            const filteredFiles = cmd.getGroupsFromLinks(linksToReturn);
+            queryGraph.graphThis(queryGraph.buildGraphData(filteredFiles, linksToReturn));
+          } else {
+            //querytype == 'YLR2'
+
+            if (link.colour == "YL") {
+              //walk all paths between the 2 groups of link which are not direct
+              var indirectPaths = cmd.indirectLinksOf(link, false);
+              if (indirectPaths.length > 0) {
+                motivations.push(
+                  "link " +
+                    link.ID +
+                    " is currently yellow, here are the link participating in the indirect paths between group " +
+                    link.lower +
+                    " and group " +
+                    link.higher +
+                    ". Added to the graphs are " +
+                    link.ID +
+                    " plus the other links of it relationship",
+                );
+                respondWith(indirectPaths);
+
+                //build files and links from the found results
+                var links = cmd.getLinks(indirectPaths);
+                var filteredFiles = cmd.getGroupsFromLinks(links);
+                queryGraph.graphThis(queryGraph.buildGraphData(filteredFiles, links));
+              } else {
+                motivations.push("link " + link.ID + " is currently yellow, but there are no indirect paths between group " + link.lower + " and group " + link.higher);
+                respondWith("no indirect paths");
+              }
+            } else {
+              motivations.push("link " + link.ID + " is " + link.colour + ", you can only use a YLR 2nd step query on a yellow link.");
+              respondWith("error");
+            }
+          }
+          //TODO if system access then run DMF query (+linked matches again) on the basis of the groups found
+        }
+      } else if (querytype == "RL") {
+          if (link.colour == "MRL" || link.colour == "NMRL") {
+
+            motivations.push(
+              "link " + link.ID + " is " + link.colour + ", perfect!",
+            );
+
+            respondWith({
+              links: [link],
+              lowerGroup: cmd.getGroup(link.lower),
+              higherGroup: cmd.getGroup(link.higher),
+            });
+            //build files from the found results
+
+            const filteredFiles = cmd.getGroupsFromLinks([link]);
+            queryGraph.graphThis(queryGraph.buildGraphData(filteredFiles, [link]));
           } else {
             motivations.push("link " + link.ID + " is " + link.colour + ", you can only use a YLR 2nd step query on a yellow link.");
             respondWith("error");
           }
-        }
-        } else {
-              motivations.push("you need to have at least a link to use the queries of this panel");
+      } else if (querytype == "R1" || querytype == "R2") {
+          if (link.colour == "YL") {
             respondWith("error");
+            motivations.push("link " + link.ID + " is " + link.colour + ", you can only access it using an YLR profile and not a rectification profile.");
+          } else {
+            if (querytype == "R1") {
+
+              motivations.push(
+                "link " + link.ID + " is " + link.colour + ", it can be accessed for rectification purposes.",
+              );
+            
+
+            respondWith({
+              links: [link],
+              lowerGroup: cmd.getGroup(link.lower),
+              higherGroup: cmd.getGroup(link.higher),
+            });
+            //build files from the found results
+
+            const filteredFiles = cmd.getGroupsFromLinks([link]);
+            queryGraph.graphThis(queryGraph.buildGraphData(filteredFiles, [link]));
+          } else {
+            //querytype == 'R2'
+
+              //walk all paths between the 2 groups of link which are not direct
+              var indirectPaths = cmd.indirectLinksOf(link, true);
+              if (indirectPaths.length > 0) {
+                motivations.push(
+                  "link " +
+                    link.ID +
+                    " is currently not yellow, here are the link participating in the indirect paths between group " +
+                    link.lower +
+                    " and group " +
+                    link.higher +
+                    ". Added to the graphs are " +
+                    link.ID +
+                    " plus the other links of it relationship",
+                );
+                respondWith(indirectPaths);
+
+                //build files and links from the found results
+                var links = cmd.getLinks(indirectPaths);
+                var filteredFiles = cmd.getGroupsFromLinks(links);
+                queryGraph.graphThis(queryGraph.buildGraphData(filteredFiles, links));
+              } else {
+                motivations.push("link " + link.ID + " is currently not yellow, but there are no indirect paths between group " + link.lower + " and group " + link.higher);
+                respondWith("no indirect paths");
+              }
+          //TODO if system access then run DMF query (+linked matches again) on the basis of the groups found
         }
-        //TODO if system access then run DMF query (+linked matches again) on the basis of the groups found
+        }
+      } else {
+        respondWith("error");
+        motivations.push("querytype " + querytype + " not yet supported");
       }
     } else {
-      respondWith("error");
-      motivations.push("querytype " + querytype + " not yet supported");
+        motivations.push("you need to have at least a link to use the queries of this panel");
+        respondWith("error");
     }
 
     motivateResponseWith(motivations);
   };
 
   var respondWith = function (value) {
-    show("MIDQueryResult", "response", value);
+    printForUser("MIDQueryResult", "response", value);
   };
 
   var motivateResponseWith = function (motivations) {
@@ -845,6 +935,18 @@ function ESPSystem(cmd, queryGraph) {
     idget("MIDQueryResult").innerHTML = "";
     idget("MIDQueryMotivations").innerHTML = "";
   };
+
+  this.queryTypeSelected = function () {
+    var querytype = currentValue("LMFQueryTypes");
+    if (querytype == "YLR1" || querytype == "YLR2") {
+      show("verifyingAuthority");
+    } else {
+      hide("verifyingAuthority");
+    }
+
+
+  };
+  
 }
 
 function StorageSystem(cmd) {
@@ -968,3 +1070,6 @@ addEventListener("load", function(e) {
   cmd.reloadStateFromUrl();
 });
 
+idget("LMFQueryTypes").onchange = function () {
+  esp.queryTypeSelected();
+};

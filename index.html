@@ -79,19 +79,29 @@
         >
           <div class="row mt-1">
             <div class="col-6">
-              build your own dataset
               <!--
               <textarea class="form-control" rows="20" id="query"></textarea>
               -->
               <p>
                 <!-- TODO add system button -->
+                
+                  <div class="input-group mb-3">
+                    <input
+                      type="text"
+                      id="systemName"
+                      class="form-control"
+                      placeholder="identifier of this system"
+                    />  
                 <button
                   type="button"
                   id="addSystemButton"
-                  class="btn btn-primary mt-1"
+                  class="btn btn-primary"
                 >
                   add System
                 </button>
+                  </div>
+              </p>
+              <p>
                 <span id="systemsListForShow"></span>
               </p>
               <p>
@@ -178,13 +188,12 @@
                 <select id="LMFQueryTypes">
                   <option value="YLR1">YLR - 1st step</option>
                   <option value="YLR2">YLR - 2nd step</option>
-                  <!--
                 <option value="RL">Red link</option>
-                <option value="R1">Rectification - 1<sup>st</sup> step</option>
-                <option value="R2">Rectification - 2<sup>nd</sup> step</option>
-                --></select>
-                as the verifying authority
-                <input type="checkbox" id="asVerifierOfTheLink" checked />
+                <option value="R1">For rectification - 1st step</option>
+                <option value="R2">For rectification - 2nd step</option>
+                </select>
+                <span id='verifyingAuthority'> as the verifying authority <input type="checkbox" id="asVerifierOfTheLink" checked />
+                </span>
               </p>
               <p style="display: none">
                 By the way, it does so happen that I have access to the
