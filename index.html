@@ -76,37 +76,43 @@
           aria-labelledby="home-tab"
         >
           <div class="row mt-1">
-            <div class="col-6">
-              <!--
-              <textarea class="form-control" rows="20" id="query"></textarea>
-              -->
-              <p>
-                <!-- TODO add system button -->
-                
-                  <div class="input-group mb-3">
-                    <input
-                      type="text"
-                      id="systemName"
-                      class="form-control"
-                      placeholder="identifier of this system"
-                    />  
-                <button
-                  type="button"
-                  id="addSystemButton"
-                  class="btn btn-primary"
-                >
-                  add System
-                </button>
-                  </div>
-              </p>
-              <p>
-                <span id="systemsListForShow"></span>
-              </p>
-              <p>
+            <div class="col-12">
+              <div class='row g-3 align-items-center'>
+                <div class="col-auto">
+                  <input
+                    type="text"
+                    id="systemName"
+                    class="form-control"
+                    placeholder="name of this system"
+                  />  
+                </div>
+                <div class="col-auto">
+                  <button
+                    type="button"
+                    id="addSystemButton"
+                    class="btn btn-primary"
+                  >
+                    add System
+                  </button>
+                </div>
+                <!--
+                <div class='col-auto'>
+                  <span id="systemsListForShow"></span>
+                </div>
+                -->
+              </div>
+              <div class='row g-3 align-items-center'>
+                <div class="col-auto">
                 <!-- TODO add system select for IG -->
                 belonging to system
+                </div>
+                <div class="col-auto">
                 <select id="systemOfGroup"></select>
+                </div>
+                <div class="col-auto">
                 please
+                </div>
+                <div class="col-auto">
                 <button
                   type="button"
                   id="addIGButton"
@@ -114,16 +120,29 @@
                 >
                   add Identiy Group
                 </button>
-              </p>
-
-              <p>
+                </div>
+              </div>
+              <div class='row g-3 align-items-center'>
+                <div class="col-auto">
                 between IG
+                </div>
+                <div class="col-auto">
                 <select id="leftIG"></select>
+                </div>
+                <div class="col-auto">
                 and IG
+                </div>
+                <div class="col-auto">
                 <select id="rightIG"></select>
                 add a
+                </div>
+                <div class="col-auto">
                 <select id="linkColour"></select>
+                </div>
+                <div class="col-auto">
                 link
+                </div>
+                <div class="col-auto">
                 <button
                   type="button"
                   id="addLinkButton"
@@ -131,43 +150,8 @@
                 >
                   add link
                 </button>
-              </p>
-            </div>
-            <div class="col-6">
-              local state management
-              <div class="row mt-1">
-                <div class="col-6">
-                  <div class="input-group mb-3">
-                    <input
-                      type="text"
-                      id="stateName"
-                      class="form-control"
-                      placeholder="identifier of this dataset"
-                    />
-                    <button type="button" id="saveData" class="btn btn-success">
-                      save as!
-                    </button>
-                  </div>
-                </div>
-                <div class="col-6">
-                  <div class="input-group mb-3">
-                    <select
-                      class="form-select"
-                      id="selectedSavedState"
-                    ></select>
-                    <button type="button" id="loadData" class="btn btn-success">
-                      load this!
-                    </button>
-                  </div>
                 </div>
               </div>
-              <!-- Button trigger modal -->
-              <button type="button" id="resetState" class="btn btn-danger">
-                reset current state
-              </button>
-
-              <!-- Modal -->
-              
             </div>
           </div>
         </div>
@@ -193,15 +177,18 @@
                 <span id='verifyingAuthority'> as the verifying authority <input type="checkbox" id="asVerifierOfTheLink" checked />
                 </span>
               </p>
-              <p>COMING SOON: with added system access!</p>
-              <p style="display: none">
+                <div class="col-auto">
                 By the way, it does so happen that I have access to the
-                following systems
-                <span id="systemsListForMIDQuery"></span>
-              </p>
+                following systems: <b>not working yet</b>
+                </div>
+                <div class="col-auto">
+                <div id="systemsListForMIDQuery"></div>
+                </div>
+                <div class="col-auto">
               <button type="button" id="LMFquery" class="btn btn-primary mt-1">
                 fetch!
               </button>
+                </div>
             </div>
           </div>
           <!--
@@ -233,15 +220,18 @@
         >
           <div class="row mt-1">
             <div class="col-12">
-              COMING SOON!
+                <b>COMING SOON</b>
+                <div class="col-auto">
+                  I have access to the following systems:
+                </div>
+                <div class="col-auto" id="systemsAccessCIR">
+                </div>
+                <div class="col-auto">
+                  Get me those groups:
+                </div>
+                <div class="col-auto" id="directMatchesGroups">
+                </div>
 
-              <p style="display:none">
-                I have access to the following systems
-                <select id="systemsAccessCIR" multiple></select>
-                get me groups
-                <select id="queriedGroups" multiple></select>
-
-                <br />
                 <button
                   type="button"
                   id="DMFquery"
@@ -249,7 +239,6 @@
                 >
                   fetch!
                 </button>
-              </p>
             </div>
           </div>
         </div>
@@ -264,7 +253,38 @@
               <h4>Local state management</h4> 
               <p>This application manipulates the browser history to allow undos/redos using the 'previous'/'next' browser features.</p>
               <p>
-              The state management functionalities of the "build your data" tab make use of the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage">local storage facilities</a> of modern browsers to maintain a local database of cases one would like to curate.</p>
+              It also offers state management functionalities making use of the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage">local storage facilities</a> of modern browsers to maintain a local database of cases one would like to curate.</p>
+              <div class="row mt-1">
+                <div class="col-6">
+                  <div class="input-group mb-3">
+                    <input
+                      type="text"
+                      id="stateName"
+                      class="form-control"
+                      placeholder="identifier of this dataset"
+                    />
+                    <button type="button" id="saveData" class="btn btn-success">
+                      save as!
+                    </button>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="input-group mb-3">
+                    <select
+                      class="form-select"
+                      id="selectedSavedState"
+                    ></select>
+                    <button type="button" id="loadData" class="btn btn-success">
+                      load this!
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <button type="button" id="resetState" class="btn btn-danger">
+                reset current state
+              </button>
+
+              
             </div>
             <div class="col-6">
               <h4>Sharing state with other users.</h4>
@@ -349,6 +369,7 @@
         <div>
           <hr />
           Current state:
+                  <span id="systemsListForShow"></span>
           <div id="graph-container" class="row mt-1"></div>
           <div class="row mt-1">
             <div class="col-4 showdown">

@@ -3,7 +3,8 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
   const width = 1296;
   const height = width / ratio;
 
-  const groupsColors = ["#7018d3", "#6c4f00", "#f98517", "#00603d", "#680000", "#002f64"];
+  //changes here should also be reflected in the custom.css
+  const groupsColors = ["#7018d3", "#6c4f00", "#f98517", "#00603d", "#680000", "#0053b2"];
 
   var canvas = document.createElement("canvas");
   canvas.style.background = "#eee"; // a valid CSS colour.

@@ -123,7 +123,7 @@ function setQuery(id, json) {
 }
 */
 
-function CMDSystem(graph) {
+function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQuery) {
   //data structure
   var nextSystemID = 0;
   var nextIGID = 0;
@@ -191,6 +191,7 @@ function CMDSystem(graph) {
       idget(buttonId).innerHTML = "add identity group " + nextIGID;
       regraph();
       reflectStateInURL();
+      refreshGroupsListForCIRQuery();
     }
   };
 
@@ -242,6 +243,40 @@ function CMDSystem(graph) {
       });
     });
     }
+  };
+
+  var refreshGroupsListForCIRQuery= function () {
+    const span = idget("directMatchesGroups");
+    span.innerHTML = "";
+
+    files.forEach(function (file) {
+      file.groups.forEach(function (group) {
+        if (systemsForCIRQuery.values().has(group.EUISID)) {
+          //TODO preserve group selection until group.EUISID is toggled, currently all group are deselected on each EUISID toggling
+
+        var htmlGroupId="CIRDirectMatchGroup."+group.IGID;
+        var option = document.createElement("input");
+        option.type = 'checkbox';
+        option.className="btn-check";
+        option.id=htmlGroupId;
+        option.autocomplete = 'off';
+        option.onclick=function() {
+          groupsForCIRQuery.toggle(group.IGID);
+        };
+
+        var label = document.createElement("label");
+        label.htmlFor= htmlGroupId;
+        label.className="btn btn-outline-group btn-outline-colorgroup"+group.EUISID;
+        label.innerHTML = group.IGID;
+
+        const space = document.createElement("span");
+        space.innerHTML = " ";
+        span.appendChild(space);
+        span.appendChild(option);
+        span.appendChild(label);
+        }
+      });
+    });
   };
 
   this.getNextSystemIDForButton = function () {
@@ -303,20 +338,14 @@ function CMDSystem(graph) {
   var refreshSystemsLists = function () {
     refreshSystemsListForShow();
     refreshSystemsListForMIDQuery();
+    refreshSystemsListForCIRQuery();
   };
 
   var refreshSystemsListForShow = function () {
     const span = idget("systemsListForShow");
     span.innerHTML = "";
-    var atLeastOneSystem = false;
 
     systems.forEach(function (system) {
-      if (!atLeastOneSystem) {
-        const option = document.createElement("span");
-        option.innerHTML = "currently defined are: ";
-        span.appendChild(option);
-        atLeastOneSystem = true;
-      }
       var option = document.createElement("span");
       option.innerHTML = system.name;
       option.className = "badge";
@@ -328,15 +357,41 @@ function CMDSystem(graph) {
     });
   };
 
-  var refreshSystemsListForMIDQuery = function () {
-    var span = idget("systemsListForMIDQuery");
+
+  var refreshSystemsListForMIDQuery= function () {
+    refreshSystemsList("systemsListForMIDQuery", "MIDLinkedMatchSystem.", systemsForMIDQuery);
+  }
+
+  var refreshSystemsListForCIRQuery= function () {
+    refreshSystemsList("systemsAccessCIR", "CIRDirectMatchSystem.", systemsForCIRQuery);
+  }
+
+  var refreshSystemsList= function (spanName, idBase, systemsSelector) {
+    const span = idget(spanName);
     span.innerHTML = "";
 
     systems.forEach(function (system) {
-      var option = document.createElement("div");
-      option.className = "form-check form-switch";
-      option.innerHTML = '<input class="form-check-input" type="checkbox" role="switch" id="system' + system.EUISID + 'MIDQueryOption"> <label class="form-check-label" for="system' + system.EUISID + 'MIDQueryOption">' + system.name + "</label>";
-      span.appendChild(option);
+        var htmlSystemId=idBase+system.EUISID;
+        var option = document.createElement("input");
+        option.type = 'checkbox';
+        option.className="btn-check";
+        option.id=htmlSystemId;
+        option.autocomplete = 'off';
+        option.onclick=function() {
+          systemsSelector.toggle(system.EUISID);
+          refreshGroupsListForCIRQuery();
+        };
+
+        var label = document.createElement("label");
+        label.htmlFor= htmlSystemId;
+        label.className="btn btn-outline-group btn-outline-colorgroup"+system.EUISID;
+        label.innerHTML = system.name;
+
+        const space = document.createElement("span");
+        space.innerHTML = " ";
+        span.appendChild(space);
+        span.appendChild(option);
+        span.appendChild(label);
     });
   };
 
@@ -549,6 +604,7 @@ function CMDSystem(graph) {
     printForUser("linksShowroom", "links", links);
     printForUser("groupsShowroom", "individual files", files);
     refreshLeftIGList();
+    refreshGroupsListForCIRQuery();
     refreshRightIGList();
     refreshLinkColoursList();
     refreshSystemsOfGroupList();
@@ -964,6 +1020,23 @@ function ESPSystem(cmd, queryGraph) {
   
 }
 
+function SelectedValues() {
+
+  const selectedValues = new Set();
+
+  this.toggle = function(selectedValue) {
+    if (selectedValues.has(selectedValue) ) {
+      selectedValues.delete(selectedValue);
+    } else {
+      selectedValues.add(selectedValue);
+    }
+  }
+
+  this.values = function() {
+    return selectedValues;
+  }
+}
+
 function StorageSystem(cmd) {
   var localstorage_entry_point = "LS_CMD_STATES";
 
@@ -1022,10 +1095,15 @@ function StorageSystem(cmd) {
   };
 }
 
+
+
 //when instanciation a D3ForceGraph the
 var stateGraph = new D3ForceGraph("graph-container", 3, 2);
 var queryGraph = new D3ForceGraph("query-graph-container", 2, 3);
-var cmd = new CMDSystem(stateGraph);
+var systemsForMIDQuery = new SelectedValues();
+var systemsForCIRQuery = new SelectedValues();
+var groupsForCIRQuery = new SelectedValues();
+var cmd = new CMDSystem(stateGraph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQuery);
 var esp = new ESPSystem(cmd, queryGraph);
 var storage = new StorageSystem(cmd);
 
