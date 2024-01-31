@@ -95,9 +95,11 @@
                     add System
                   </button>
                 </div>
+                <!--
                 <div class='col-auto'>
                   <span id="systemsListForShow"></span>
                 </div>
+                -->
               </div>
               <div class='row g-3 align-items-center'>
                 <div class="col-auto">
@@ -175,15 +177,18 @@
                 <span id='verifyingAuthority'> as the verifying authority <input type="checkbox" id="asVerifierOfTheLink" checked />
                 </span>
               </p>
-              <p>COMING SOON: with added system access!</p>
-              <p style="display: none">
+                <div class="col-auto">
                 By the way, it does so happen that I have access to the
-                following systems
-                <span id="systemsListForMIDQuery"></span>
-              </p>
+                following systems: <b>not working yet</b>
+                </div>
+                <div class="col-auto">
+                <div id="systemsListForMIDQuery"></div>
+                </div>
+                <div class="col-auto">
               <button type="button" id="LMFquery" class="btn btn-primary mt-1">
                 fetch!
               </button>
+                </div>
             </div>
           </div>
           <!--
@@ -215,15 +220,18 @@
         >
           <div class="row mt-1">
             <div class="col-12">
-              COMING SOON!
+                <b>COMING SOON</b>
+                <div class="col-auto">
+                  I have access to the following systems:
+                </div>
+                <div class="col-auto" id="systemsAccessCIR">
+                </div>
+                <div class="col-auto">
+                  Get me those groups:
+                </div>
+                <div class="col-auto" id="directMatchesGroups">
+                </div>
 
-              <p style="display:none">
-                I have access to the following systems
-                <select id="systemsAccessCIR" multiple></select>
-                and those are my direct matches 
-                <select id="queriedGroups" multiple></select>
-
-                <br />
                 <button
                   type="button"
                   id="DMFquery"
@@ -231,7 +239,6 @@
                 >
                   fetch!
                 </button>
-              </p>
             </div>
           </div>
         </div>
@@ -362,6 +369,7 @@
         <div>
           <hr />
           Current state:
+                  <span id="systemsListForShow"></span>
           <div id="graph-container" class="row mt-1"></div>
           <div class="row mt-1">
             <div class="col-4 showdown">
