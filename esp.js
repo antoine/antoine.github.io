@@ -148,6 +148,8 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
     }
     systems.push({EUISID: nextSystemID, name:systemName});
     refreshSystemsOfGroupList();
+    //since refreshing the systems will de-toggle them we need to de-toggle the groups as well
+    refreshGroupsListForCIRQuery();
     printForUser("systemsShowroom", "systems", systems);
     nextSystemID++;
     idget(buttonId).innerHTML = "add system " + nextSystemID;
@@ -230,7 +232,7 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
     var select = idget("rightIG");
     cleanSelect(select);
     if (ifdef(currentlyOnLeft)) {
-    var leftGroup = group(currentlyOnLeft).group;
+    var leftGroup = groupAndIFID(currentlyOnLeft).group;
     cleanSelect(select);
     files.forEach(function (file) {
       file.groups.forEach(function (freeGroup) {
@@ -248,32 +250,34 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
   var refreshGroupsListForCIRQuery= function () {
     const span = idget("directMatchesGroups");
     span.innerHTML = "";
+    //groupsForCIRQuery.reset();
 
     files.forEach(function (file) {
       file.groups.forEach(function (group) {
         if (systemsForCIRQuery.values().has(group.EUISID)) {
-          //TODO preserve group selection until group.EUISID is toggled, currently all group are deselected on each EUISID toggling
+          var htmlGroupId="CIRDirectMatchGroup."+group.IGID;
+          var option = document.createElement("input");
+          option.type = 'checkbox';
+          option.className="btn-check";
+          option.id=htmlGroupId;
+          option.autocomplete = 'off';
+          if (groupsForCIRQuery.values().has(group.IGID)) {
+            option.checked=true;
+          }
+          option.onclick=function() {
+            groupsForCIRQuery.toggle(group.IGID);
+          };
 
-        var htmlGroupId="CIRDirectMatchGroup."+group.IGID;
-        var option = document.createElement("input");
-        option.type = 'checkbox';
-        option.className="btn-check";
-        option.id=htmlGroupId;
-        option.autocomplete = 'off';
-        option.onclick=function() {
-          groupsForCIRQuery.toggle(group.IGID);
-        };
+          var label = document.createElement("label");
+          label.htmlFor= htmlGroupId;
+          label.className="btn btn-outline-group btn-outline-colorgroup"+group.EUISID;
+          label.innerHTML = group.IGID;
 
-        var label = document.createElement("label");
-        label.htmlFor= htmlGroupId;
-        label.className="btn btn-outline-group btn-outline-colorgroup"+group.EUISID;
-        label.innerHTML = group.IGID;
-
-        const space = document.createElement("span");
-        space.innerHTML = " ";
-        span.appendChild(space);
-        span.appendChild(option);
-        span.appendChild(label);
+          const space = document.createElement("span");
+          space.innerHTML = " ";
+          span.appendChild(space);
+          span.appendChild(option);
+          span.appendChild(label);
         }
       });
     });
@@ -359,40 +363,49 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
 
 
   var refreshSystemsListForMIDQuery= function () {
-    refreshSystemsList("systemsListForMIDQuery", "MIDLinkedMatchSystem.", systemsForMIDQuery);
+    refreshSystemsList("systemsListForMIDQuery", "MIDLinkedMatchSystem.", systemsForMIDQuery );
   }
 
   var refreshSystemsListForCIRQuery= function () {
-    refreshSystemsList("systemsAccessCIR", "CIRDirectMatchSystem.", systemsForCIRQuery);
+    refreshSystemsList("systemsAccessCIR", "CIRDirectMatchSystem.", systemsForCIRQuery );
   }
 
-  var refreshSystemsList= function (spanName, idBase, systemsSelector) {
+  var refreshSystemsList= function (spanName, idBase, systemsSelector ) {
     const span = idget(spanName);
     span.innerHTML = "";
 
+    var systemsFound = false;
+
     systems.forEach(function (system) {
-        var htmlSystemId=idBase+system.EUISID;
-        var option = document.createElement("input");
-        option.type = 'checkbox';
-        option.className="btn-check";
-        option.id=htmlSystemId;
-        option.autocomplete = 'off';
-        option.onclick=function() {
-          systemsSelector.toggle(system.EUISID);
-          refreshGroupsListForCIRQuery();
-        };
+      systemsFound = true;
+      var htmlSystemId=idBase+system.EUISID;
+      var option = document.createElement("input");
+      if (systemsSelector.values().has(system.EUISID)) {
+        option.checked=true;
+      }
+      option.type = 'checkbox';
+      option.className="btn-check";
+      option.id=htmlSystemId;
+      option.autocomplete = 'off';
+      option.onclick=function() {
+        systemsSelector.toggle(system.EUISID);
+        refreshGroupsListForCIRQuery();
+      };
 
-        var label = document.createElement("label");
-        label.htmlFor= htmlSystemId;
-        label.className="btn btn-outline-group btn-outline-colorgroup"+system.EUISID;
-        label.innerHTML = system.name;
+      var label = document.createElement("label");
+      label.htmlFor= htmlSystemId;
+      label.className="btn btn-outline-group btn-outline-colorgroup"+system.EUISID;
+      label.innerHTML = system.name;
 
-        const space = document.createElement("span");
-        space.innerHTML = " ";
-        span.appendChild(space);
-        span.appendChild(option);
-        span.appendChild(label);
+      const space = document.createElement("span");
+      space.innerHTML = " ";
+      span.appendChild(space);
+      span.appendChild(option);
+      span.appendChild(label);
     });
+    if (!systemsFound) {
+      span.innerHTML = 'you need to add some systems to your data first';
+    }
   };
 
   var refreshQueriableLinksList = function () {
@@ -430,7 +443,7 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
     return true;
   };
 
-  var group = function (groupID) {
+  var groupAndIFID = function (groupID) {
     var foundGroup;
 
     files.forEach(function (file, ifid) {
@@ -472,11 +485,11 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
     var leftIfId = fileOfGroup(leftIG);
     var rightIfId = fileOfGroup(rightIG);
     if (leftIfId === rightIfId) {
-      //TODO cam this test be removed? this should never happen since we exclude the link outright, should this (and the returned boolean) remain?
+      //XXX cam this test be removed? this should never happen since we exclude the link outright, should this (and the returned boolean) remain?
       loge(leftIG + " and " + rightIG + " are already in the same file " + leftIfId + ", they cannot be kept in different files anymore. ");
       return false;
     } else {
-      //TODO excludedGroups will contain duplicates over time, not an issue but
+      //XXX excludedGroups will contain duplicates over time, not an issue but
       //not very clean either
       var leftFile = files.get(leftIfId);
       leftFile.excludedGroups.push(rightIG);
@@ -592,31 +605,40 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
 
   this.reloadWith = function (rawState, refreshURL) {
     var state = JSON.parse(rawState, JSONStringifyReviver);
-    files = state.files;
-    systems = state.systems;
-    links = state.links;
-    nextSystemID = state.nextSystemID;
-    nextIGID = state.nextIGID;
-    nextIFID = state.nextIFID;
-    nextLinkID = state.nextLinkID;
+    if (state != null) {
+      files = state.files;
+      systems = state.systems;
+      links = state.links;
+      nextSystemID = state.nextSystemID;
+      nextIGID = state.nextIGID;
+      nextIFID = state.nextIFID;
+      nextLinkID = state.nextLinkID;
 
-    printForUser("systemsShowroom", "systems", systems);
-    printForUser("linksShowroom", "links", links);
-    printForUser("groupsShowroom", "individual files", files);
-    refreshLeftIGList();
-    refreshGroupsListForCIRQuery();
-    refreshRightIGList();
-    refreshLinkColoursList();
-    refreshSystemsOfGroupList();
-    refreshQueriableLinksList();
-    refreshSystemsLists();
-    idget("addSystemButton").innerHTML = "add system " + nextSystemID;
-    idget("addIGButton").innerHTML = "add identity group " + nextIGID;
-    regraph();
-    if (refreshURL) {
-      reflectStateInURL();
+      printForUser("systemsShowroom", "systems", systems);
+      printForUser("linksShowroom", "links", links);
+      printForUser("groupsShowroom", "individual files", files);
+      refreshLeftIGList();
+      refreshGroupsListForCIRQuery();
+      refreshRightIGList();
+      refreshLinkColoursList();
+      refreshSystemsOfGroupList();
+      refreshQueriableLinksList();
+      //refreshSystemsLists();
+      idget("addSystemButton").innerHTML = "add system " + nextSystemID;
+      idget("addIGButton").innerHTML = "add identity group " + nextIGID;
+      regraph();
+      if (refreshURL) {
+        reflectStateInURL();
+      }
+    } else {
+      this.resetState();
+
     }
   };
+
+  this.resetState = function() {
+    this.reloadWith('{"nextSystemID":0,"nextIGID":0,"nextIFID":0,"nextLinkID":0,"files":{"dataType":"Map","value":[]},"systems":[],"links":[]}', true);
+  }
 
   //managing queries
 
@@ -644,7 +666,7 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
   };
 
   this.getGroup = function (groupID) {
-    return group(groupID).group;
+    return groupAndIFID(groupID).group;
   };
 
   this.indirectLinksOf = function (link, noYellow) {
@@ -697,11 +719,11 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
       links.forEach(function (link) {
         hlog(inc + "considering link " + link.ID + ": " + link.lower + "<-> " + link.higher);
         if (!isOneOf(link.ID, linksWeDoNotWantToSee)) {
-          //TODO check if next test is still required, as we are checking all
+          //XXX check if next test is still required, as we are checking all
           //groups from the past now
           if (!isOneOf(link.ID, linksLeadingToThisPoint)) {
             //excluding the link we just called from
-            //TODO check if next test is still required, as we are checking all links from the past now
+            //XXX check if next test is still required, as we are checking all links from the past now
             if (link.ID != callingFromLink) {
               if (link.colour != "YL") {
                 if (link.lower == currentIG || link.higher == currentIG) {
@@ -775,7 +797,33 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
     graph.graphThis(graph.buildGraphData(files, links));
   };
 
-  this.getGroupsFromLinks = function (selectedLinks) {
+  this.getFilesFromGroups = function (selectedGroups) {
+    function insertIfNotKnown(filteredFiles, groupAndIfId) {
+      if (filteredFiles.has(groupAndIfId.ifid)) {
+        var groupsAlreadyInFile = false;
+        filteredFiles.get(groupAndIfId.ifid).groups.every(function (alreadyKnownGroup) {
+          if (alreadyKnownGroup.IGID == groupAndIfId.group.IGID) {
+            groupsAlreadyInFile = true;
+            return false;
+          } else {
+            return true;
+          }
+        });
+        if (!groupsAlreadyInFile) {
+          filteredFiles.get(groupAndIfId.ifid).groups.push(groupAndIfId.group);
+        }
+      } else {
+        filteredFiles.set(groupAndIfId.ifid, { ifid: groupAndIfId.ifid, groups: [groupAndIfId.group] });
+      }
+    }
+
+    const filteredFiles = new Map();
+    selectedGroups.forEach(function (groupID) {
+      insertIfNotKnown(filteredFiles, groupAndIFID(groupID));
+    });
+    return filteredFiles;
+  };
+  this.getFilesFromLinks = function (selectedLinks) {
     function insertIfNotKnown(filteredFiles, groupAndIfId) {
       if (filteredFiles.has(groupAndIfId.ifid)) {
         var groupsAlreadyInFile = false;
@@ -797,8 +845,8 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
 
     const filteredFiles = new Map();
     selectedLinks.forEach(function (link) {
-      insertIfNotKnown(filteredFiles, group(link.lower));
-      insertIfNotKnown(filteredFiles, group(link.higher));
+      insertIfNotKnown(filteredFiles, groupAndIFID(link.lower));
+      insertIfNotKnown(filteredFiles, groupAndIFID(link.higher));
     });
     return filteredFiles;
   };
@@ -831,6 +879,31 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
 
 
 function ESPSystem(cmd, queryGraph) {
+  this.fetchGroups= function (systemsForCIRQuery, groupsForCIRQuery) {
+    //move query graph outside of the tabs
+    queryGraph.reset();
+
+    var motivations = [];
+    if (groupsForCIRQuery.values().size > 0) {
+
+      //TODO exclude the links for which the system is not toggled as they are not visible as selected on the UI but their statue remains thus
+            respondWith({
+              links: [],
+              directMatches: groupsForCIRQuery.array()
+            });
+
+            //build files from the found results
+            const filteredFiles = cmd.getFilesFromGroups(groupsForCIRQuery.array());
+            queryGraph.graphThis(queryGraph.buildGraphData(filteredFiles, []));
+
+    } else {
+      motivations.push("you didn't select a group");
+      respondWith("no results found");
+    }
+    motivateResponseWith(motivations);
+
+  };
+
   this.fetchLink = function () {
     queryGraph.reset();
     var querytype = currentValue("LMFQueryTypes");
@@ -865,7 +938,7 @@ function ESPSystem(cmd, queryGraph) {
             });
             //build files from the found results
 
-            const filteredFiles = cmd.getGroupsFromLinks(linksToReturn);
+            const filteredFiles = cmd.getFilesFromLinks(linksToReturn);
             queryGraph.graphThis(queryGraph.buildGraphData(filteredFiles, linksToReturn));
           } else {
             //querytype == 'YLR2'
@@ -892,7 +965,7 @@ function ESPSystem(cmd, queryGraph) {
 
                 //build files and links from the found results
                 var links = cmd.getLinks(indirectPaths);
-                var filteredFiles = cmd.getGroupsFromLinks(links);
+                var filteredFiles = cmd.getFilesFromLinks(links);
                 queryGraph.graphThis(queryGraph.buildGraphData(filteredFiles, links));
               } else {
                 //we shouldn't come here anymore, as we now include the source link in the response
@@ -920,7 +993,7 @@ function ESPSystem(cmd, queryGraph) {
             });
             //build files from the found results
 
-            const filteredFiles = cmd.getGroupsFromLinks([link]);
+            const filteredFiles = cmd.getFilesFromLinks([link]);
             queryGraph.graphThis(queryGraph.buildGraphData(filteredFiles, [link]));
           } else {
             motivations.push("link " + cmd.nameThisLink(link) + " is " + link.colour + ", you can only use a RLl query on a red link.");
@@ -946,7 +1019,7 @@ function ESPSystem(cmd, queryGraph) {
             });
             //build files from the found results
 
-            const filteredFiles = cmd.getGroupsFromLinks([link]);
+            const filteredFiles = cmd.getFilesFromLinks([link]);
             queryGraph.graphThis(queryGraph.buildGraphData(filteredFiles, [link]));
           } else {
             //querytype == 'R2'
@@ -967,7 +1040,7 @@ function ESPSystem(cmd, queryGraph) {
 
                 //build files and links from the found results
                 var links = cmd.getLinks(indirectPaths);
-                var filteredFiles = cmd.getGroupsFromLinks(links);
+                var filteredFiles = cmd.getFilesFromLinks(links);
                 queryGraph.graphThis(queryGraph.buildGraphData(filteredFiles, links));
               } else {
                 motivations.push("access to link " + cmd.nameThisLink(link) + " is granted, but there are no indirect paths between group " + link.lower + " and group " + link.higher);
@@ -1035,6 +1108,12 @@ function SelectedValues() {
   this.values = function() {
     return selectedValues;
   }
+  this.array= function() {
+    return Array.from(selectedValues.values());
+  }
+  this.reset = function() {
+    selectedValues.clear();
+  }
 }
 
 function StorageSystem(cmd) {
@@ -1089,9 +1168,8 @@ function StorageSystem(cmd) {
   };
 
   this.resetState = function () {
-    //a bit ugle
     esp.reset();
-    cmd.reloadWith('{"nextSystemID":0,"nextIGID":0,"nextIFID":0,"nextLinkID":0,"files":{"dataType":"Map","value":[]},"systems":[],"links":[]}', true);
+    cmd.resetState();
   };
 }
 
@@ -1135,6 +1213,9 @@ doOnClick("addLinkButton", function () {
 
 doOnClick("LMFquery", function () {
   esp.fetchLink();
+});
+doOnClick("DMFquery", function () {
+  esp.fetchGroups(systemsForCIRQuery, groupsForCIRQuery);
 });
 doOnClick("importLoadedState", function () {
   storage.importAsCurrent();
