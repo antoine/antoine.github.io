@@ -606,6 +606,9 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
   this.reloadWith = function (rawState, refreshURL) {
     var state = JSON.parse(rawState, JSONStringifyReviver);
     if (state != null) {
+      systemsForMIDQuery.reset();
+      systemsForCIRQuery.reset();
+      groupsForCIRQuery.reset();
       files = state.files;
       systems = state.systems;
       links = state.links;
@@ -623,7 +626,7 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
       refreshLinkColoursList();
       refreshSystemsOfGroupList();
       refreshQueriableLinksList();
-      //refreshSystemsLists();
+      
       idget("addSystemButton").innerHTML = "add system " + nextSystemID;
       idget("addIGButton").innerHTML = "add identity group " + nextIGID;
       regraph();
@@ -884,16 +887,25 @@ function ESPSystem(cmd, queryGraph) {
     queryGraph.reset();
 
     var motivations = [];
-    if (groupsForCIRQuery.values().size > 0) {
 
-      //TODO exclude the links for which the system is not toggled as they are not visible as selected on the UI but their statue remains thus
+      //exclude the links for which the system is not toggled has those groups
+      //are not visible as selected on the UI but their statue remains thus
+      var groupsUsedForQuery = [];
+      groupsForCIRQuery.array().forEach(function (selectedGroup) {
+        const group = cmd.getGroup(selectedGroup);
+        if (systemsForCIRQuery.values().has(group.EUISID)) {
+          groupsUsedForQuery.push(group);
+        }
+      });
+    if (groupsUsedForQuery.length> 0) {
+
             respondWith({
               links: [],
-              directMatches: groupsForCIRQuery.array()
+              directMatches: groupsUsedForQuery
             });
 
             //build files from the found results
-            const filteredFiles = cmd.getFilesFromGroups(groupsForCIRQuery.array());
+            const filteredFiles = cmd.getFilesFromGroups(groupsUsedForQuery.map((g) => g.IGID));
             queryGraph.graphThis(queryGraph.buildGraphData(filteredFiles, []));
 
     } else {
