@@ -678,7 +678,7 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
 
     const foundWhiteLinks = [];
     links.forEach((link) => {
-      if (link.colour == 'WL') {
+      if (link.colour == "WL") {
         if (isOneOf(link.ID, newDirectMatchesAndLinks.links)) {
           foundWhiteLinks.push(link);
         }
@@ -688,24 +688,21 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
     function participatesInAWhiteLink(anEnd, whiteLinks) {
       var groupIsVisiblyWhiteLinked = false;
       whiteLinks.every((l) => {
-        if (l.lower == anEnd  || l.higher == anEnd)
-        {
+        if (l.lower == anEnd || l.higher == anEnd) {
           groupIsVisiblyWhiteLinked = true;
           return false;
         } else {
           return true;
         }
-
       });
       return groupIsVisiblyWhiteLinked;
-
     }
 
     var heavyLogs = true;
 
     function hlog(stuff) {
       if (heavyLogs) {
-        console.log("GL>"+ stuff);
+        console.log("GL>" + stuff);
       }
     }
     //fetch green links considering newDirectMatches[].IGID and directMatchesToConsider together
@@ -714,17 +711,16 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
       if (link.colour == "GL") {
         //between two of the groups we are returning as direct match
         //TODO identify direct linked matches (due to white links only), currently all matches are considered as direct
-        hlog("considering GL "+link.ID);
+        hlog("considering GL " + link.ID);
         newDirectMatchesAndLinks.groups.forEach((oneEnd) => {
           if (link.lower == oneEnd || link.higher == oneEnd) {
             newDirectMatchesAndLinks.groups.forEach((otherEnd) => {
               if (otherEnd != oneEnd && (link.lower == otherEnd || link.higher == otherEnd)) {
-                hlog("GL "+link.ID+" exist between two linked matches "+oneEnd+" and "+otherEnd);
+                hlog("GL " + link.ID + " exist between two linked matches " + oneEnd + " and " + otherEnd);
                 //were both ends 'matches', valid for green links? either they were direct matches or a white link connecting to them is returned.
-                if ((isOneOf(oneEnd, directMatchesToConsider) || participatesInAWhiteLink (oneEnd, foundWhiteLinks)) 
-                  && (isOneOf(otherEnd, directMatchesToConsider)|| participatesInAWhiteLink(otherEnd, foundWhiteLinks))) {
-                newDirectMatchesAndLinks.links.push(link.ID);
-              }
+                if ((isOneOf(oneEnd, directMatchesToConsider) || participatesInAWhiteLink(oneEnd, foundWhiteLinks)) && (isOneOf(otherEnd, directMatchesToConsider) || participatesInAWhiteLink(otherEnd, foundWhiteLinks))) {
+                  newDirectMatchesAndLinks.links.push(link.ID);
+                }
               }
             });
           }
@@ -734,8 +730,8 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
 
     return {
       groups: Array.from(new Set(newDirectMatchesAndLinks.groups).values()),
-      links: Array.from(new Set(newDirectMatchesAndLinks.links).values())
-    }
+      links: Array.from(new Set(newDirectMatchesAndLinks.links).values()),
+    };
   };
 
   //recursive call, follwing links as potential cycling graphs
@@ -838,13 +834,11 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
               }
             }
           }
-
         });
       }
     });
     return foundGroupsAndLinks;
   };
-
 
   this.indirectLinksOf = function (link, doNotIncludeYellowFromOriginalRelation) {
     //from lower to higher
@@ -1045,7 +1039,6 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
 }
 
 function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
-
   this.fetchGroups = function (systemsForCIRQuery, groupsForCIRQuery) {
     //move query graph outside of the tabs
     groupsQueryGraph.reset();
@@ -1073,11 +1066,7 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
       });
 
       const links = cmd.getLinks(linksToReturn.links);
-      const filteredFiles= cmd.mergeResultFiles(
-          cmd.mergeResultFiles(
-            cmd.getFilesFromLinks(links), 
-            cmd.getFilesFromGroups(linksToReturn.groups)), 
-          cmd.getFilesFromGroups(directMatchesToConsider.map((g) => g.IGID)));
+      const filteredFiles = cmd.mergeResultFiles(cmd.mergeResultFiles(cmd.getFilesFromLinks(links), cmd.getFilesFromGroups(linksToReturn.groups)), cmd.getFilesFromGroups(directMatchesToConsider.map((g) => g.IGID)));
 
       groupsQueryGraph.graphThis(groupsQueryGraph.buildGraphData(filteredFiles, links));
     } else {
@@ -1094,6 +1083,9 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
     var queriedLink = currentValue("queriedLink");
     var link = cmd.getLink(queriedLink);
     if (ifdef(link)) {
+      var links;
+      var filteredFiles;
+      var graphThis = false;
       if (querytype == "YLR1" || querytype == "YLR2") {
         //if not verifying authority then the profile cannot be used
         if (!idget("asVerifierOfTheLink").checked) {
@@ -1119,8 +1111,9 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
             });
             //build files from the found results
 
-            const filteredFiles = cmd.getFilesFromLinks(linksToReturn);
-            linksQueryGraph.graphThis(linksQueryGraph.buildGraphData(filteredFiles, linksToReturn));
+            graphThis = true;
+            filteredFiles = cmd.getFilesFromLinks(linksToReturn);
+            links = linksToReturn;
           } else {
             //querytype == 'YLR2'
 
@@ -1133,9 +1126,9 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
                 motivations.push("We've added to the graph " + cmd.nameThisLink(link) + " plus the other non-yellow links of it relationship if any, if that's all there is to see it means there are no indirect paths.");
                 midRespondWith(indirectPaths);
 
-                var links = cmd.getLinks(indirectPaths);
-                var filteredFiles = cmd.getFilesFromLinks(links);
-                linksQueryGraph.graphThis(linksQueryGraph.buildGraphData(filteredFiles, links));
+                graphThis = true;
+                links = cmd.getLinks(indirectPaths);
+                filteredFiles = cmd.getFilesFromLinks(links);
               } else {
                 //we shouldn't come here anymore, as we now include the source link in the response
                 motivations.push("access to link " + cmd.nameThisLink(link) + " is granted, but there are no indirect paths between group " + link.lower + " and group " + link.higher);
@@ -1159,8 +1152,9 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
           });
           //build files from the found results
 
-          const filteredFiles = cmd.getFilesFromLinks([link]);
-          linksQueryGraph.graphThis(linksQueryGraph.buildGraphData(filteredFiles, [link]));
+          graphThis = true;
+          filteredFiles = cmd.getFilesFromLinks([link]);
+          links = [link];
         } else {
           motivations.push("link " + cmd.nameThisLink(link) + " is " + link.colour + ", you can only use a RLl query on a red link.");
           midRespondWith("access denied");
@@ -1181,8 +1175,9 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
             });
             //build files from the found results
 
-            const filteredFiles = cmd.getFilesFromLinks([link]);
-            linksQueryGraph.graphThis(linksQueryGraph.buildGraphData(filteredFiles, [link]));
+            graphThis = true;
+            filteredFiles = cmd.getFilesFromLinks([link]);
+            links = [link];
           } else {
             //querytype == 'R2'
 
@@ -1194,9 +1189,9 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
               midRespondWith(indirectPaths);
 
               //build files and links from the found results
-              var links = cmd.getLinks(indirectPaths);
-              var filteredFiles = cmd.getFilesFromLinks(links);
-              linksQueryGraph.graphThis(linksQueryGraph.buildGraphData(filteredFiles, links));
+              graphThis = true;
+              links = cmd.getLinks(indirectPaths);
+              filteredFiles = cmd.getFilesFromLinks(links);
             } else {
               motivations.push("access to link " + cmd.nameThisLink(link) + " is granted, but there are no indirect paths between group " + link.lower + " and group " + link.higher);
               midRespondWith("no indirect paths");
@@ -1207,6 +1202,11 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
       } else {
         midRespondWith("error");
         motivations.push("querytype " + querytype + " not yet supported");
+      }
+      if (graphThis) {
+        linksQueryGraph.graphThis(linksQueryGraph.buildGraphData(filteredFiles, links));
+      } else {
+        linksQueryGraph.reset();
       }
     } else {
       motivations.push("you need to have at least a link to use the queries of this panel");
@@ -1240,7 +1240,6 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
   var respondWith = function (value, tagName) {
     printForUser(tagName, "response", value);
   };
-
 
   this.reset = function () {
     linksQueryGraph.reset();

@@ -31,8 +31,6 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
   }
 
   this.reset = function () {
-    //TODO clearRect does not clear the canvas the first time around... why?
-    //context.clearRect(0, 0, width, height);
     document.getElementById(graphContainerId).style.cssText = "visibility:hidden";
   };
 
@@ -161,13 +159,12 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
     }
     const simulation = d3
       .forceSimulation(nodes)
-      .force("charge", d3.forceManyBody().strength(-40*zoomFactor))
+      .force("charge", d3.forceManyBody().strength(-40 * zoomFactor))
       //center is not working yet
       .force(
         "link",
         d3
           .forceLink(links)
-          //.strength(1)
           .strength(function (link) {
             if (l(link).colour != "YL") {
               return 1;
@@ -188,14 +185,33 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
           })
           .iterations(10),
       )
-      // .force("center", d3.forceCenter(0, 0).strength(1))
-      //    .force( "collision", d3.forceCollide().radius(function (d) { return d.radius; }),)
+      .force(
+        "center", //center is not a force, it shift the viewport to keep it centered on all the nodes
+        d3
+          .forceCenter(
+            0,
+            0,
+            //context.canvas.getBoundingClientRect.width / 2,
+            //context.canvas.getBoundingClientRect.height / 2,
+          )
+          .strength(1),
+      )
+      //.force( "collision", d3.forceCollide().radius(function (d) { return d.radius; }),)
       .on("tick", ticked);
 
-    function dragfind(event, y) { 
+    function dragfind(event, y) {
       //settingt the radius of the find to null implies infinity, making the
       //search always hit a node since a set radius doesn't always work
-      var subject = simulation.find(event.x - width / 2, event.y - height / 2, null);
+      //event is using canvas coordinates (top left is 0,0) but the find need to
+      //happen using simulation coordinates (center is 0,0)
+      var subject = simulation.find(event.x - context.canvas.getBoundingClientRect().width / 2, event.y - context.canvas.getBoundingClientRect().height / 2, null);
+      /*
+      var subject = simulation.find(
+        event.x - width / 2,
+        event.y - height / 2,
+        null,
+      );
+      */
       return subject;
     }
 
@@ -224,11 +240,10 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
   // Append the canvas element.
   document.getElementById(graphContainerId).append(canvas);
 
-
   //HELPERS section below
- 
+
   //ARC computation
-  
+
   //computing arc between 2 points
   function twoArcs(a, b) {
     //we are talking about 2 arcs, position is either 0 or 1
