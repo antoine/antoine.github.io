@@ -192,9 +192,10 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
       //    .force( "collision", d3.forceCollide().radius(function (d) { return d.radius; }),)
       .on("tick", ticked);
 
-    function dragfind(event, y) {
+    function dragfind(event, y) { 
       //settingt the radius of the find to null implies infinity, making the
       //search always hit a node since a set radius doesn't always work
+      //TODO  the find isn't working well on some resized diagram where real dimensions are not the requested ones 
       var subject = simulation.find(event.x - width / 2, event.y - height / 2, null);
       return subject;
     }

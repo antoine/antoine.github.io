@@ -1,6 +1,5 @@
 TODO
 
-- add DMF queries
 - when a group is returned in the query graph find a way to represent which of the following is returned (could be a combination):
   - system <- meaning the group is colored, otherwise gray
   - reference <- add the number
