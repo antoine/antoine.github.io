@@ -984,7 +984,10 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
         filteredFiles.get(groupAndIfId.ifid).groups.push(groupAndIfId.group);
       }
     } else {
-      filteredFiles.set(groupAndIfId.ifid, { ifid: groupAndIfId.ifid, groups: [groupAndIfId.group] });
+      filteredFiles.set(groupAndIfId.ifid, {
+        ifid: groupAndIfId.ifid,
+        groups: [groupAndIfId.group],
+      });
     }
   };
 
@@ -1291,10 +1294,21 @@ function StorageSystem(cmd) {
     saveStateName(stateName.value);
     this.refreshStatesList(selectToRefreshName);
   };
+  this.deleteState = function (selectWithStateToDeleteName) {
+    const stateToDelete = currentValue(selectWithStateToDeleteName);
+    removeStateName(stateToDelete);
+    localStorage.removeItem(stateToDelete);
+    this.refreshStatesList(selectWithStateToDeleteName);
+  };
 
   var saveStateName = function (name) {
     var statesNames = getStatesList();
     statesNames.add(name);
+    localStorage.setItem(localstorage_entry_point, JSON.stringify(statesNames, JSONStringifyReplacer));
+  };
+  var removeStateName = function (name) {
+    var statesNames = getStatesList();
+    statesNames.delete(name);
     localStorage.setItem(localstorage_entry_point, JSON.stringify(statesNames, JSONStringifyReplacer));
   };
 
@@ -1366,6 +1380,10 @@ doOnClick("saveData", function () {
 
 doOnClick("loadData", function () {
   storage.loadData("selectedSavedState", "stateName");
+});
+
+doOnClick("deleteData", function () {
+  storage.deleteState("selectedSavedState");
 });
 
 doOnClick("addIGButton", function () {
