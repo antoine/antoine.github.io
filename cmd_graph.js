@@ -17,6 +17,8 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
   context.scale(dpi, dpi);
   const fontsize = 13 * zoomFactor;
   context.font = "bold " + fontsize + "px sans-serif";
+  function gWidth() {return context.canvas.getBoundingClientRect().width;}
+  function gHeight() {return context.canvas.getBoundingClientRect().height;}
 
   this.getColorForEUIS = function (EUISID) {
     return getColorForEUIS(EUISID);
@@ -157,6 +159,8 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
 
       context.restore();
     }
+    const forceX = d3.forceX(0).strength(0.015);
+    const forceY = d3.forceY(0).strength(0.015);
     const simulation = d3
       .forceSimulation(nodes)
       .force("charge", d3.forceManyBody().strength(-40 * zoomFactor))
@@ -185,8 +189,10 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
           })
           .iterations(10),
       )
+      
+      /*
       .force(
-        "center", //center is not a force, it shift the viewport to keep it centered on all the nodes
+        "center", //center is not a force, it shift the viewport (well, it shifts all the items positions, same same) to keep it centered on all the nodes
         d3
           .forceCenter(
             0,
@@ -196,15 +202,22 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
           )
           .strength(1),
       )
+      */
+      
       //.force( "collision", d3.forceCollide().radius(function (d) { return d.radius; }),)
+      //using height as the radius
+      //.force("radial", d3.forceRadial(context.canvas.getBoundingClientRect().height, context.canvas.getBoundingClientRect().width / 2, context.canvas.getBoundingClientRect().height / 2))
+         .force("x", forceX)
+      .force("y", forceY)
       .on("tick", ticked);
 
     function dragfind(event, y) {
       //settingt the radius of the find to null implies infinity, making the
       //search always hit a node since a set radius doesn't always work
       //event is using canvas coordinates (top left is 0,0) but the find need to
-      //happen using simulation coordinates (center is 0,0)
-      var subject = simulation.find(event.x - context.canvas.getBoundingClientRect().width / 2, event.y - context.canvas.getBoundingClientRect().height / 2, null);
+      //happen using simulation coordinates (center is 0,0) and the real dimension of the canvas
+      //as the original one might not have been erspected
+      var subject = simulation.find(event.x - gWidth() / 2, event.y - gHeight()/ 2, null);
       /*
       var subject = simulation.find(
         event.x - width / 2,
