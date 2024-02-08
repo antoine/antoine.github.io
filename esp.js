@@ -361,14 +361,14 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
   };
 
   var refreshSystemsListForMIDQuery = function () {
-    refreshSystemsList("systemsListForMIDQuery", "MIDLinkedMatchSystem.", systemsForMIDQuery);
+    refreshSystemsList("systemsListForMIDQuery", "MIDLinkedMatchSystem.", systemsForMIDQuery, false);
   };
 
   var refreshSystemsListForCIRQuery = function () {
-    refreshSystemsList("systemsAccessCIR", "CIRDirectMatchSystem.", systemsForCIRQuery);
+    refreshSystemsList("systemsAccessCIR", "CIRDirectMatchSystem.", systemsForCIRQuery, true);
   };
 
-  var refreshSystemsList = function (spanName, idBase, systemsSelector) {
+  var refreshSystemsList = function (spanName, idBase, systemsSelector, refreshCIRgroups) {
     const span = idget(spanName);
     span.innerHTML = "";
 
@@ -387,7 +387,9 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
       option.autocomplete = "off";
       option.onclick = function () {
         systemsSelector.toggle(system.EUISID);
+        if (refreshCIRgroups) {
         refreshGroupsListForCIRQuery();
+        }
       };
 
       var label = document.createElement("label");
@@ -750,93 +752,100 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
       groups: [],
       links: [],
     };
-    if (comingFromLink != null) {
-      hlog("collecting link " + comingFromLink);
-      foundGroupsAndLinks.links.push(comingFromLink);
-    }
+    if (STPRs.length <= 0) {
+      error.log("STPRs list cannot be empty when following lists");
+    } else {
+      if (comingFromLink != null) {
+        hlog("collecting link " + comingFromLink);
+        foundGroupsAndLinks.links.push(comingFromLink);
+      }
 
-    startPoints.forEach((sp) => {
-      //get all viable links from sp
-      if (isOneOf(sp, alreadySeenGroups)) {
-        hlog("we've been through the group " + sp + " before in this thread, stopping this thread.");
-      } else if (comingFromLink != null && isOneOf(sp, originalStartPoints)) {
-        //comingFromLink being null indicates we've already moved away from the
-        //originalStartPoints and are now back on it
-        hlog(sp + " is an original starting point, stopping this thread.");
-      } else {
-        hlog("looking for links from IG " + sp);
-        if (comingFromLink != null) {
-          hlog("link leading to this point is " + comingFromLink);
-        }
-        hlog("collecting group " + sp);
-        foundGroupsAndLinks.groups.push(sp);
-
-        const connectedOtherEnds = [];
-
-        links.forEach(function (link) {
-          //excluding the link we just called from
-          if (comingFromLink == null || link.ID != comingFromLink) {
-            if (link.lower == sp || link.higher == sp) {
-              const otherEndIG = groupAndIFID(link.lower == sp ? link.higher : link.lower).group;
-              const thisEndIG = groupAndIFID(link.higher == sp ? link.higher : link.lower).group;
-              hlog("link " + link.ID + " " + link.colour + " connects currentIG " + thisEndIG.IGID + " to " + otherEndIG.IGID);
-
-              //excluding the groups we might have found
-              if (!isOneOf(otherEndIG.IGID, foundGroupsAndLinks.groups)) {
-                if (link.colour == "MRL" || link.colour == "NMRL" || (link.colour == "WL" && isOneOf(thisEndIG.EUISID, STPRs) && isOneOf(otherEndIG.EUISID, STPRs))) {
-                  hlog("link is followable, going deeper...");
-                  //we slice for a shallow copy to avoid changing the array in place
-                  const newlySeenGroups = alreadySeenGroups.slice(0);
-                  newlySeenGroups.push(sp);
-                  connectedOtherEnds.push(otherEndIG.IGID);
-
-                  const foundDeeper = followLinksDepthFirst([otherEndIG.IGID], link.ID, newlySeenGroups, increment + 2, originalStartPoints, STPRs);
-                  foundGroupsAndLinks.groups.push(...foundDeeper.groups);
-                  foundGroupsAndLinks.links.push(...foundDeeper.links);
-                } else {
-                  if (link.colour == "YL" || link.colour == "GL") {
-                    hlog("but it's " + link.colour + " so not followable");
-                  } else if (link.colour == "WL") {
-                    hlog("but it's " + link.colour + " and the other End group belongs to EUIS " + otherEndIG.EUISID + " which is not an STPR " + JSON.stringify(STPRs));
-                  } else {
-                    hlog("logic issue!!!!");
-                  }
-                }
-              } else {
-                hlog("previous searches have already been to " + sp + ", disregarding");
-              }
-            } else {
-              //hlog(inc + "link is not connected to currentIG " + currentIG + ", disregarding");
-            }
-          } else {
-            //hlog(inc + "link is same as the one we are calling from, disregarding");
+      startPoints.forEach((sp) => {
+        //get all viable links from sp
+        if (isOneOf(sp, alreadySeenGroups)) {
+          hlog("we've been through the group " + sp + " before in this thread, stopping this thread.");
+        } else if (comingFromLink != null && isOneOf(sp, originalStartPoints)) {
+          //comingFromLink being null indicates we've already moved away from the
+          //originalStartPoints and are now back on it
+          hlog(sp + " is an original starting point, stopping this thread.");
+        } else {
+          hlog("looking for links from IG " + sp);
+          if (comingFromLink != null) {
+            hlog("link leading to this point is " + comingFromLink);
           }
-        });
+          hlog("collecting group " + sp);
+          foundGroupsAndLinks.groups.push(sp);
 
-        //now adding a loop for all STPRs IGs member of the same IF which are not in connectedOtherEnds
+          const connectedOtherEnds = [];
 
-        files.get(fileOfGroup(sp)).groups.forEach((groupOfTheIf) => {
-          if (groupOfTheIf.IGID != sp) {
-            if (!isOneOf(groupOfTheIf, alreadySeenGroups)) {
-              if (!isOneOf(groupOfTheIf, originalStartPoints)) {
-                if (!isOneOf(groupOfTheIf.IGID, connectedOtherEnds)) {
-                  if (isOneOf(groupOfTheIf.EUISID, STPRs)) {
-                    hlog("found group " + groupOfTheIf.IGID + " in the same IF as " + sp + " and beloning to EUIS " + groupOfTheIf.EUISID + "which is in the STPRs, going sideway...");
+          links.forEach(function (link) {
+            //excluding the link we just called from
+            if (comingFromLink == null || link.ID != comingFromLink) {
+              if (link.lower == sp || link.higher == sp) {
+                const otherEndIG = groupAndIFID(link.lower == sp ? link.higher : link.lower).group;
+                const thisEndIG = groupAndIFID(link.higher == sp ? link.higher : link.lower).group;
+                hlog("link " + link.ID + " " + link.colour + " connects currentIG " + thisEndIG.IGID + " to " + otherEndIG.IGID);
 
+                //excluding the groups we might have found
+                if (!isOneOf(otherEndIG.IGID, foundGroupsAndLinks.groups)) {
+                  //we always follow RL because there is always at least one STPR when entering this routine
+                  //we follow WL only if either systems are STPRs owned
+                  if (((link.colour == "MRL" || link.colour == "NMRL"))
+                    || (link.colour == "WL" && isOneOf(thisEndIG.EUISID, STPRs) && isOneOf(otherEndIG.EUISID, STPRs))) {
+                    hlog("link is followable, going deeper...");
                     //we slice for a shallow copy to avoid changing the array in place
                     const newlySeenGroups = alreadySeenGroups.slice(0);
                     newlySeenGroups.push(sp);
-                    const foundDeeper = followLinksDepthFirst([groupOfTheIf.IGID], null, newlySeenGroups, increment + 2, originalStartPoints, STPRs);
+                    connectedOtherEnds.push(otherEndIG.IGID);
+
+                    const foundDeeper = followLinksDepthFirst([otherEndIG.IGID], link.ID, newlySeenGroups, increment + 2, originalStartPoints, STPRs);
                     foundGroupsAndLinks.groups.push(...foundDeeper.groups);
                     foundGroupsAndLinks.links.push(...foundDeeper.links);
+                  } else {
+                    if (link.colour == "YL" || link.colour == "GL") {
+                      hlog("but it's " + link.colour + " so not followable");
+                    } else if (link.colour == "WL") {
+                      hlog("but it's " + link.colour + " and the other End group belongs to EUIS " + otherEndIG.EUISID + " which is not an STPR " + JSON.stringify(STPRs));
+                    } else {
+                      hlog("logic issue!!!!");
+                    }
+                  }
+                } else {
+                  hlog("previous searches have already been to " + sp + ", disregarding");
+                }
+              } else {
+                //hlog(inc + "link is not connected to currentIG " + currentIG + ", disregarding");
+              }
+            } else {
+              //hlog(inc + "link is same as the one we are calling from, disregarding");
+            }
+          });
+
+          //now adding a loop for all STPRs IGs member of the same IF which are not in connectedOtherEnds
+
+          files.get(fileOfGroup(sp)).groups.forEach((groupOfTheIf) => {
+            if (groupOfTheIf.IGID != sp) {
+              if (!isOneOf(groupOfTheIf, alreadySeenGroups)) {
+                if (!isOneOf(groupOfTheIf, originalStartPoints)) {
+                  if (!isOneOf(groupOfTheIf.IGID, connectedOtherEnds)) {
+                    if (isOneOf(groupOfTheIf.EUISID, STPRs)) {
+                      hlog("found group " + groupOfTheIf.IGID + " in the same IF as " + sp + " and beloning to EUIS " + groupOfTheIf.EUISID + "which is in the STPRs, going sideway...");
+
+                      //we slice for a shallow copy to avoid changing the array in place
+                      const newlySeenGroups = alreadySeenGroups.slice(0);
+                      newlySeenGroups.push(sp);
+                      const foundDeeper = followLinksDepthFirst([groupOfTheIf.IGID], null, newlySeenGroups, increment + 2, originalStartPoints, STPRs);
+                      foundGroupsAndLinks.groups.push(...foundDeeper.groups);
+                      foundGroupsAndLinks.links.push(...foundDeeper.links);
+                    }
                   }
                 }
               }
             }
-          }
-        });
-      }
-    });
+          });
+        }
+      });
+    }
     return foundGroupsAndLinks;
   };
 
@@ -1079,7 +1088,7 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
     cirMotivateResponseWith(motivations);
   };
 
-  this.fetchLink = function () {
+  this.fetchLink = function (systemsForMIDQuery) {
     linksQueryGraph.reset();
     var querytype = currentValue("LMFQueryTypes");
     var motivations = [];
@@ -1142,7 +1151,6 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
               midRespondWith("access denied");
             }
           }
-          //TODO if system access then run DMF query (+linked matches again) on the basis of the groups found
         }
       } else if (querytype == "RL") {
         if (link.colour == "MRL" || link.colour == "NMRL") {
@@ -1199,7 +1207,6 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
               motivations.push("access to link " + cmd.nameThisLink(link) + " is granted, but there are no indirect paths between group " + link.lower + " and group " + link.higher);
               midRespondWith("no indirect paths");
             }
-            //TODO if system access then run DMF query (+linked matches again) on the basis of the groups found
           }
         }
       } else {
@@ -1207,7 +1214,31 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
         motivations.push("querytype " + querytype + " not yet supported");
       }
       if (graphThis) {
+          //if system access then run DMF query (+linked matches again) on the basis of the groups found
+        if (systemsForMIDQuery.array().length > 0) {
+          const groups = [];
+          filteredFiles.forEach((file) => {
+            file.groups.forEach((group) => {
+              groups.push(group.IGID);
+            });
+          });
+          const linksToReturn = cmd.followLinks(
+            groups,
+            systemsForMIDQuery.array(),
+          );
+          const newLinks = cmd.getLinks(linksToReturn.links);
+          //const newFilteredFiles = cmd.mergeResultFiles(cmd.getFilesFromLinks(newLinks), filteredFiles);
+          const newFilteredFiles = cmd.mergeResultFiles(
+            cmd.mergeResultFiles(
+              filteredFiles,
+              cmd.getFilesFromLinks(newLinks)),
+            cmd.getFilesFromGroups(linksToReturn.groups));
+          const allLinks = Array.from(new Set(links.concat(newLinks)).values());
+        linksQueryGraph.graphThis(linksQueryGraph.buildGraphData(newFilteredFiles, allLinks));
+        } else {
+
         linksQueryGraph.graphThis(linksQueryGraph.buildGraphData(filteredFiles, links));
+      }
       } else {
         linksQueryGraph.reset();
       }
@@ -1263,7 +1294,8 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
   };
 }
 
-function SelectedValues() {
+function SelectedValues(givenName) {
+  const name = givenName;
   const selectedValues = new Set();
 
   this.toggle = function (selectedValue) {
@@ -1357,9 +1389,9 @@ function StorageSystem(cmd) {
 var stateGraph = new D3ForceGraph("graph-container", 3, 2);
 var linksQueryGraph = new D3ForceGraph("links-query-graph-container", 2, 3);
 var groupsQueryGraph = new D3ForceGraph("groups-query-graph-container", 2, 3);
-var systemsForMIDQuery = new SelectedValues();
-var systemsForCIRQuery = new SelectedValues();
-var groupsForCIRQuery = new SelectedValues();
+var systemsForMIDQuery = new SelectedValues("MIDsystems");
+var systemsForCIRQuery = new SelectedValues("CIRsystems");
+var groupsForCIRQuery = new SelectedValues("CIRgroups");
 var cmd = new CMDSystem(stateGraph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQuery);
 var esp = new ESPSystem(cmd, linksQueryGraph, groupsQueryGraph);
 var storage = new StorageSystem(cmd);
@@ -1395,7 +1427,7 @@ doOnClick("addLinkButton", function () {
 });
 
 doOnClick("LMFquery", function () {
-  esp.fetchLink();
+  esp.fetchLink(systemsForMIDQuery);
 });
 doOnClick("DMFquery", function () {
   esp.fetchGroups(systemsForCIRQuery, groupsForCIRQuery);
