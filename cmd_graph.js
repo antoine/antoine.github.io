@@ -121,20 +121,27 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
 
         context.lineWidth = 1;
         context.beginPath();
-        //context.moveTo(d.x + 3, d.y);
+        //circle
         context.arc(d.x, d.y, 12 * zoomFactor, 0, 2 * Math.PI);
         var color = getColorForEUIS(nodeData.EUISID);
         context.fillStyle = color;
         context.fill();
         context.strokeStyle = color;
         context.stroke();
+        if (nodeData.informationLevel == 'rib') {
+          context.beginPath();
+          context.arc(d.x, d.y, 16 * zoomFactor, 0, 2 * Math.PI);
+          context.lineWidth = 2 * zoomFactor;
+          context.stroke();
+        }
 
         //context.strokeStyle = "white";
 
         context.fillStyle = "white";
         context.textAlign = "center";
         context.textBaseline = "middle";
-        context.fillText(nodeData.IGID, d.x, d.y);
+        //+1.5 to y to center the text lower on the circles
+        context.fillText(nodeData.IGID, d.x, d.y+1.5*zoomFactor);
 
         if (individualFiles.has(nodeData.file)) {
           individualFiles.get(nodeData.file).push({ x: d.x, y: d.y });
@@ -350,16 +357,29 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
   //translate CMDSystem dataset into graph structure
   //pure function
   this.buildGraphData = function (gFiles, gLinks) {
+    
     const graphNodes = [];
     const graphLinks = [];
 
     var nodeI = 0;
     gFiles.forEach(function (file, ifid) {
       file.groups.forEach(function (group) {
+        //we are further categorizing nodes in 2 ways:
+        //- amount of data returned for a node : 
+        //  - ref -> number in empty circle)
+        //  - ref+identity -> number in full circle)
+        //  - ref+identity+business -> number in full circle + another circle)
+        //  - identity (art 20) -> number in gray circle
+        //  - EUSID (art 22) -> no number in colored circle, one per EUISID
+        //- how this node was matched: 
+        //  - direct : white number
+        //  - linked : underscore number (if possible, otherwise change color might be easier)
         graphNodes.push({
           index: nodeI++,
           IGID: group.IGID,
           EUISID: group.EUISID,
+          matchType: group.matchType,
+          informationLevel: group.informationLevel,
           file: ifid,
         });
       });

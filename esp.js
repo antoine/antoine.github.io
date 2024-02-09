@@ -56,6 +56,19 @@ function JSONStringifyReviver(key, value) {
 function ifdef(o) {
   return typeof o !== "undefined";
 }
+  function isOneOf(one, many) {
+    var yesItIs = false;
+
+    many.every(function (maybeOne) {
+      if (maybeOne == one) {
+        yesItIs = true;
+        return false;
+      } else {
+        return true;
+      }
+    });
+    return yesItIs;
+  }
 
 //form elements manipulation
 function currentValue(selectId) {
@@ -952,19 +965,6 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
     return indirectLinks;
   };
 
-  var isOneOf = function (one, many) {
-    var yesItIs = false;
-
-    many.every(function (maybeOne) {
-      if (maybeOne == one) {
-        yesItIs = true;
-        return false;
-      } else {
-        return true;
-      }
-    });
-    return yesItIs;
-  };
 
   var incrementInSpaces = function (increment) {
     let mySpaces = "";
@@ -978,50 +978,93 @@ function CMDSystem(graph, systemsForMIDQuery, systemsForCIRQuery, groupsForCIRQu
     graph.graphThis(graph.buildGraphData(files, links));
   };
 
-  var insertIfNotKnown = function (filteredFiles, groupAndIfId) {
-    if (filteredFiles.has(groupAndIfId.ifid)) {
+  var insertIfNotKnown = function (filteredFiles, groupAndIFID, matchType, informationLevelSelector) {
+
+    function isHigher(test, against) {
+      //when merging the higher level of information returned is kept: rib > ri > r > i > e
+      if (test == 'rib') { return true; }
+      else if (test == 'ri') { return against != 'rib' }
+      else if (test == 'r') { return against != 'rib' && against != 'ri' }
+      else if (test == 'i') { return against != 'rib' && against != 'ri' && against != 'r' }
+      else if (test == 'e') { return against != 'rib' && against != 'ri' && against != 'r' && against != 'i' }
+      console.error("unknown information level " + test);
+      return false;
+
+    }
+
+    if (filteredFiles.has(groupAndIFID.ifid)) {
       var groupsAlreadyInFile = false;
-      filteredFiles.get(groupAndIfId.ifid).groups.every(function (alreadyKnownGroup) {
-        if (alreadyKnownGroup.IGID == groupAndIfId.group.IGID) {
+      var foundGroup = null;
+      filteredFiles.get(groupAndIFID.ifid).groups.every(function (alreadyKnownGroup) {
+        if (alreadyKnownGroup.IGID == groupAndIFID.group.IGID) {
           groupsAlreadyInFile = true;
+          foundGroup = alreadyKnownGroup;
           return false;
         } else {
           return true;
         }
       });
       if (!groupsAlreadyInFile) {
-        filteredFiles.get(groupAndIfId.ifid).groups.push(groupAndIfId.group);
+        if (matchType == null) {
+          //merging 2 files 
+          filteredFiles.get(groupAndIFID.ifid).groups.push(groupAndIFID.group);
+        } else {
+          //creating a file
+          filteredFiles.get(groupAndIFID.ifid).groups.push({ ...groupAndIFID.group, matchType: matchType, informationLevel: informationLevelSelector(groupAndIFID.group) });
+        }
+      } else {
+        //when merging the most relevant match type is kept: direct over linked
+        if (groupAndIFID.group.matchType == 'direct') {
+          foundGroup.matchType = 'direct';
+        }
+        if (isHigher(groupAndIFID.group.informationLevel, foundGroup.informationLevel)) {
+          foundGroup.informationLevel = groupAndIFID.group.informationLevel;
+        }
+
       }
     } else {
-      filteredFiles.set(groupAndIfId.ifid, {
-        ifid: groupAndIfId.ifid,
-        groups: [groupAndIfId.group],
-      });
+      if (matchType == null) {
+        //merging 2 files 
+        filteredFiles.set(groupAndIFID.ifid, {
+          ifid: groupAndIFID.ifid,
+          groups: [groupAndIFID.group],
+        });
+      } else {
+        //creating a file
+        filteredFiles.set(groupAndIFID.ifid, {
+          ifid: groupAndIFID.ifid,
+          groups: [{ ...groupAndIFID.group, matchType: matchType, informationLevel: informationLevelSelector(groupAndIFID.group) }],
+        });
+      }
     }
   };
+
+
 
   this.mergeResultFiles = function (filesA, filesB) {
     filesB.forEach(function (file, ifid) {
       file.groups.forEach(function (group) {
-        insertIfNotKnown(filesA, groupAndIFID(group.IGID));
+        //the group we have here has extra argument as it's a search result, reloading it from the state will have us lose those
+        const ifid = groupAndIFID(group.IGID).ifid;
+        insertIfNotKnown(filesA, {group:group, ifid:ifid}, null, null);
       });
-    });
+      });
     return filesA;
   };
 
-  this.getFilesFromGroups = function (selectedGroups) {
+  this.getFilesFromGroups = function (selectedGroups, matchType, informationLevelSelector) {
     const filteredFiles = new Map();
     selectedGroups.forEach(function (groupID) {
-      insertIfNotKnown(filteredFiles, groupAndIFID(groupID));
+      insertIfNotKnown(filteredFiles, groupAndIFID(groupID), matchType, informationLevelSelector);
     });
     return filteredFiles;
   };
 
-  this.getFilesFromLinks = function (selectedLinks) {
+  this.getFilesFromLinks = function (selectedLinks, matchType, informationLevelSelector) {
     const filteredFiles = new Map();
     selectedLinks.forEach(function (link) {
-      insertIfNotKnown(filteredFiles, groupAndIFID(link.lower));
-      insertIfNotKnown(filteredFiles, groupAndIFID(link.higher));
+      insertIfNotKnown(filteredFiles, groupAndIFID(link.lower), matchType, informationLevelSelector);
+      insertIfNotKnown(filteredFiles, groupAndIFID(link.higher), matchType, informationLevelSelector);
     });
     return filteredFiles;
   };
@@ -1078,7 +1121,11 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
       });
 
       const links = cmd.getLinks(linksToReturn.links);
-      const filteredFiles = cmd.mergeResultFiles(cmd.mergeResultFiles(cmd.getFilesFromLinks(links), cmd.getFilesFromGroups(linksToReturn.groups)), cmd.getFilesFromGroups(directMatchesToConsider.map((g) => g.IGID)));
+      const filteredFiles = cmd.mergeResultFiles(
+        cmd.mergeResultFiles(
+          cmd.getFilesFromLinks(links, 'linked', (g) => isOneOf(g.EUISID, systemsForCIRQuery.array())?'rib':'ri'), 
+          cmd.getFilesFromGroups(linksToReturn.groups, 'linked', (g) => isOneOf(g.EUISID, systemsForCIRQuery.array())?'rib':'ri')), 
+        cmd.getFilesFromGroups(directMatchesToConsider.map((g) => g.IGID), 'direct', (g) => 'rib'));
 
       groupsQueryGraph.graphThis(groupsQueryGraph.buildGraphData(filteredFiles, links));
     } else {
