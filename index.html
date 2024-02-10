@@ -66,6 +66,11 @@
           state management 
           </button>
         </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="aboutPanel-tab" data-bs-toggle="tab" data-bs-target="#aboutPanel" type="button" role="tab" aria-controls="aboutPanel" aria-selected='false' >
+          about
+          </button>
+        </li>
       </ul>
 
       <div class="tab-content" id="myTabContent">
@@ -376,13 +381,56 @@
             </div>
           </div>
         </div>
+
+        <div
+          class="tab-pane fade"
+          id="aboutPanel"
+          role="tabpanel"
+          aria-labelledby="aboutPanel-tab"
+        >
+          <div class="row mt-1">
+            <div class="col-12">
+              <h3>What is this</h3>
+
+              <p>This is a simulator of links between groups (it doesn’t concern itself with the composition of the grouips themselves, 
+                or the motivation for a given link) and the queries you can make towards the resulting graph.
+              </p>
+              <p>You are requested to build your own dataset by defining systems, groups belonging to those systems and then links between those groups. 
+                The simulator will only show valid options for links creation (meaning that depending on the leftmost group chosen the rightmost list will 
+                contain only valid option for potential group to link with, and once this leftmost group is selected the list for link colour will only 
+                contain only lvalid options). 
+                </p>
+                <p>There are facilities for local state management and sharing across users.
+              </p>
+              <p>Queries are separated into link first queries (where the input would be the identifier of a link) and group first query (where the input 
+                would be search parameters allowing to match against the content of a group). Only instead of entering parameters you directly identify 
+                the direct matches you want your query to have found, and from there on the simulator returns those results complemented with the linked matches 
+                which are going to derive from the systems to which you have access.
+                </p>
+                <p>There is an advance taste of being able to establish to which system you have access when running a link first query, by selecting systems you 
+                  have would have access when doing such queries.
+              </p>
+              <p>The whole sheebang is a standalone website which can easily run isolated from the internet on a local server (running straight from the file system
+                is not supported as browser prevent loading CSS from file:// URLs for security reasons). More info can be gotten at 
+                <a href="https://github.com/antoine/antoine.github.io">the github repository</a>
+              </p>
+              <h3>Legend for query results graphs</h3>
+              The following is not applicable for state graph where no differenciation of type is made between elements beyond the color.
+              <p>Direct matches are identified using the number of the group without text decoration, whereas 
+                <u>groups returned as a linked match are underlined</u>(not visible in the legend below)</p>
+              <p>
+                <img src="assets/legend.png">
+              </p>
+            </div>
+          </div>
+        </div>
         <!-- END OF THE PANELS -->
         <div>
           <hr />
           Current state:
                   <span id="systemsListForShow"></span>
           <div id="graph-container" class="row mt-1"></div>
-          <div class="row mt-1">
+          <div class="row mt-1" style="display:none">
             <div class="col-4 showdown">
               <span id="systemsShowroom"></span>
             </div>
