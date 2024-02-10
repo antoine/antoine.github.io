@@ -17,8 +17,12 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
   context.scale(dpi, dpi);
   const fontsize = 13 * zoomFactor;
   context.font = "bold " + fontsize + "px sans-serif";
-  function gWidth() {return context.canvas.getBoundingClientRect().width;}
-  function gHeight() {return context.canvas.getBoundingClientRect().height;}
+  function gWidth() {
+    return context.canvas.getBoundingClientRect().width;
+  }
+  function gHeight() {
+    return context.canvas.getBoundingClientRect().height;
+  }
 
   this.getColorForEUIS = function (EUISID) {
     return getColorForEUIS(EUISID);
@@ -122,16 +126,25 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
         context.lineWidth = 1;
         context.beginPath();
         //circle
-        context.arc(d.x, d.y, 12 * zoomFactor, 0, 2 * Math.PI);
+        var arcOfSize = (size) => {context.arc(d.x, d.y, size * zoomFactor, 0, 2 * Math.PI);}
         var color = getColorForEUIS(nodeData.EUISID);
-        context.fillStyle = color;
-        context.fill();
+        if (nodeData.informationLevel == "r") {
+          //reference only groups, 'r', are empty
+          arcOfSize(10.5); //10.5 = 12-3/2
+          context.lineWidth = 3 * zoomFactor;
+          context.fillStyle = "#ADD8E6";
+          context.fill();
+        } else {
+          arcOfSize(12);
+          context.fillStyle = color;
+          context.fill();
+        }
         context.strokeStyle = color;
         context.stroke();
-        if (nodeData.informationLevel == 'rib') {
+        if (nodeData.informationLevel == "rib") {
           context.beginPath();
           context.arc(d.x, d.y, 16 * zoomFactor, 0, 2 * Math.PI);
-          context.lineWidth = 2 * zoomFactor;
+          context.lineWidth = 3 * zoomFactor;
           context.stroke();
         }
 
@@ -140,8 +153,10 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
         context.fillStyle = "white";
         context.textAlign = "center";
         context.textBaseline = "middle";
-        //+1.5 to y to center the text lower on the circles
-        context.fillText(nodeData.IGID, d.x, d.y+1.5*zoomFactor);
+        //+1.5 to y to center the text lower on the circles, but that's only on
+        //firefox, safari does it centered already.... oh joy, well, using 0 for
+        //now
+        context.fillText(nodeData.IGID, d.x, d.y + 0 * zoomFactor);
 
         if (individualFiles.has(nodeData.file)) {
           individualFiles.get(nodeData.file).push({ x: d.x, y: d.y });
@@ -152,14 +167,20 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
 
       //compute smallest enclosing circle to describe IFs
 
+      //draw individual files below all other items
       context.globalCompositeOperation = "destination-over";
-      individualFiles.forEach(function (coordsOfGroupsOfFile) {
+
+      //draw the smallest (compare(a,b)=> b-a) individual files first to ensure they are always visible (we are drawing in reverse Z order)
+      Array.from(individualFiles.entries())
+        .toSorted((f1, f2) => f1[1].length - f2[1].length)
+        .map((f) => f[1])
+        .forEach(function (coordsOfGroupsOfFile) {
         var circle = makeCircle(coordsOfGroupsOfFile);
-        context.lineWidth = 1;
+        context.lineWidth = 1*zoomFactor;
         context.beginPath();
         context.arc(circle.x, circle.y, circle.r + 20 * zoomFactor, 0, 2 * Math.PI);
-        //context.strokeStyle = "#3ca1c3";
-        //context.stroke();
+        context.strokeStyle = "#3ca1c3";
+        context.stroke();
         context.fillStyle = "#ADD8E6";
         context.fill();
       });
@@ -196,7 +217,7 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
           })
           .iterations(10),
       )
-      
+
       /*
       .force(
         "center", //center is not a force, it shift the viewport (well, it shifts all the items positions, same same) to keep it centered on all the nodes
@@ -210,11 +231,11 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
           .strength(1),
       )
       */
-      
+
       //.force( "collision", d3.forceCollide().radius(function (d) { return d.radius; }),)
       //using height as the radius
       //.force("radial", d3.forceRadial(context.canvas.getBoundingClientRect().height, context.canvas.getBoundingClientRect().width / 2, context.canvas.getBoundingClientRect().height / 2))
-         .force("x", forceX)
+      .force("x", forceX)
       .force("y", forceY)
       .on("tick", ticked);
 
@@ -224,7 +245,7 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
       //event is using canvas coordinates (top left is 0,0) but the find need to
       //happen using simulation coordinates (center is 0,0) and the real dimension of the canvas
       //as the original one might not have been erspected
-      var subject = simulation.find(event.x - gWidth() / 2, event.y - gHeight()/ 2, null);
+      var subject = simulation.find(event.x - gWidth() / 2, event.y - gHeight() / 2, null);
       /*
       var subject = simulation.find(
         event.x - width / 2,
@@ -357,7 +378,6 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
   //translate CMDSystem dataset into graph structure
   //pure function
   this.buildGraphData = function (gFiles, gLinks) {
-    
     const graphNodes = [];
     const graphLinks = [];
 
@@ -365,13 +385,13 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
     gFiles.forEach(function (file, ifid) {
       file.groups.forEach(function (group) {
         //we are further categorizing nodes in 2 ways:
-        //- amount of data returned for a node : 
+        //- amount of data returned for a node :
         //  - ref -> number in empty circle)
         //  - ref+identity -> number in full circle)
         //  - ref+identity+business -> number in full circle + another circle)
         //  - identity (art 20) -> number in gray circle
         //  - EUSID (art 22) -> no number in colored circle, one per EUISID
-        //- how this node was matched: 
+        //- how this node was matched:
         //  - direct : white number
         //  - linked : underscore number (if possible, otherwise change color might be easier)
         graphNodes.push({
