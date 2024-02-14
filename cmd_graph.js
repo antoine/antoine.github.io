@@ -7,7 +7,8 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
   const groupsColors = ["#7018d3", "#6c4f00", "#f98517", "#00603d", "#680000", "#0053b2"];
 
   var canvas = document.createElement("canvas");
-  canvas.style.background = "#eee"; // a valid CSS colour.
+  //canvas.style.background = "#eee"; // a valid CSS colour.
+  canvas.style.background = "white"; // a valid CSS colour.
 
   var dpi = window.devicePixelRatio;
   canvas.width = width * dpi;
@@ -56,6 +57,48 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
       context.clearRect(0, 0, width, height);
       context.save();
       context.translate(width / 2, height / 2);
+      //will collect the coordinates of each group in the same IF so as to draw
+      //bounding circle
+      var individualFiles = new Map();
+      //compute smallest enclosing circle to describe IFs
+      for (const d of nodes) {
+
+        var nodeData = n(d);
+        if (individualFiles.has(nodeData.file)) {
+          individualFiles.get(nodeData.file).push({ x: d.x, y: d.y });
+        } else {
+          individualFiles.set(nodeData.file, [{ x: d.x, y: d.y }]);
+        }
+      }
+
+      //draw individual files below all other items
+//      context.globalCompositeOperation = "destination-over";
+///*
+        context.shadowOffsetX = 6*zoomFactor;
+        context.shadowOffsetY = 6*zoomFactor;
+        context.shadowBlur = 15*zoomFactor;
+        context.shadowColor = '#5f777f';
+ //       */
+
+      //draw the smallest (compare(a,b)=> b-a) individual files first to ensure they are always visible (we are drawing in reverse Z order)
+      Array.from(individualFiles.entries())
+        .toSorted((f1, f2) => f2[1].length - f1[1].length)
+        .map((f) => f[1])
+        .forEach(function (coordsOfGroupsOfFile) {
+        var circle = makeCircle(coordsOfGroupsOfFile);
+        //context.lineWidth = 1*zoomFactor;
+        context.beginPath();
+        context.arc(circle.x, circle.y, circle.r + 20 * zoomFactor, 0, 2 * Math.PI);
+        //context.strokeStyle = "#3ca1c3";
+        //context.stroke();
+        context.fillStyle = "#ADD8E6";
+        context.fill();
+      });
+
+        context.shadowOffsetX = 2*zoomFactor;
+        context.shadowOffsetY = 2*zoomFactor;
+        context.shadowBlur = 5*zoomFactor;
+        context.shadowColor = 'grey';
 
       for (const d of links) {
         var linkData = l(d);
@@ -116,9 +159,10 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
         context.stroke();
       }
 
-      //will collect the coordinates of each group in the same IF so as to draw
-      //bounding circle
-      var individualFiles = new Map();
+        context.shadowOffsetX = 0;
+        context.shadowOffsetY = 0;
+        context.shadowColor = 0;
+      context.shadowBlur = 0;
 
       for (const d of nodes) {
         var nodeData = n(d);
@@ -129,7 +173,7 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
         var arcOfSize = (size) => {context.arc(d.x, d.y, size * zoomFactor, 0, 2 * Math.PI);}
         var color = getColorForEUIS(nodeData.EUISID);
         if (nodeData.informationLevel == "r") {
-          //reference only groups, 'r', are empty
+          //reference only groups, 'r', are empty (meaning color of IFs)
           arcOfSize(10.5); //10.5 = 12-3/2
           context.lineWidth = 3 * zoomFactor;
           context.fillStyle = "#ADD8E6";
@@ -165,25 +209,6 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
         }
       }
 
-      //compute smallest enclosing circle to describe IFs
-
-      //draw individual files below all other items
-      context.globalCompositeOperation = "destination-over";
-
-      //draw the smallest (compare(a,b)=> b-a) individual files first to ensure they are always visible (we are drawing in reverse Z order)
-      Array.from(individualFiles.entries())
-        .toSorted((f1, f2) => f1[1].length - f2[1].length)
-        .map((f) => f[1])
-        .forEach(function (coordsOfGroupsOfFile) {
-        var circle = makeCircle(coordsOfGroupsOfFile);
-        context.lineWidth = 1*zoomFactor;
-        context.beginPath();
-        context.arc(circle.x, circle.y, circle.r + 20 * zoomFactor, 0, 2 * Math.PI);
-        context.strokeStyle = "#3ca1c3";
-        context.stroke();
-        context.fillStyle = "#ADD8E6";
-        context.fill();
-      });
 
       context.restore();
     }
