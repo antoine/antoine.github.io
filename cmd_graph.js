@@ -6,6 +6,37 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
   //changes here should also be reflected in the custom.css
   const groupsColors = ["#7018d3", "#6c4f00", "#f98517", "#00603d", "#680000", "#0053b2"];
 
+
+const measureText = (ctx, text) => {
+  let metrics = ctx.measureText(text)
+  return {
+    width: Math.floor(metrics.width),
+    height: Math.floor(metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent),
+    actualHeight: Math.floor(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent)
+  }
+}
+
+const underline = (ctx, text, x, y) => {
+  let metrics = measureText(ctx, text)
+  let fontSize = Math.floor(metrics.actualHeight * 1.4) // 140% the height 
+  switch (ctx.textAlign) {
+    case "center" : x -= (metrics.width / 2) ; break
+    case "right"  : x -= metrics.width       ; break
+  }
+  switch (ctx.textBaseline) {
+    case "top"    : y += (fontSize)     ; break
+    case "middle" : y += (fontSize / 2) ; break
+  }
+  ctx.save()
+  ctx.beginPath()
+  ctx.strokeStyle = ctx.fillStyle
+  ctx.lineWidth = Math.ceil(fontSize * 0.08)
+  ctx.moveTo(x, y)
+  ctx.lineTo(x + metrics.width, y)
+  ctx.stroke()
+  ctx.restore()
+}
+
   var canvas = document.createElement("canvas");
   //canvas.style.background = "#eee"; // a valid CSS colour.
   canvas.style.background = "white"; // a valid CSS colour.
@@ -201,6 +232,9 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
         //firefox, safari does it centered already.... oh joy, well, using 0 for
         //now
         context.fillText(nodeData.IGID, d.x, d.y + 0 * zoomFactor);
+        if (nodeData.matchType == 'linked') {
+           underline(context, nodeData.IGID, d.x, d.y + 0 * zoomFactor);
+        }
 
         if (individualFiles.has(nodeData.file)) {
           individualFiles.get(nodeData.file).push({ x: d.x, y: d.y });
