@@ -5,40 +5,40 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
 
   //changes here should also be reflected in the custom.css
   const groupsColors = ["#7018d3", "#6c4f00", "#f98517", "#00603d", "#680000", "#0053b2"];
+  const individualFileColor = "#ADD8E6";
 
 
-const measureText = (ctx, text) => {
-  let metrics = ctx.measureText(text)
-  return {
-    width: Math.floor(metrics.width),
-    height: Math.floor(metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent),
-    actualHeight: Math.floor(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent)
+  const measureText = (ctx, text) => {
+    let metrics = ctx.measureText(text)
+    return {
+      width: Math.floor(metrics.width),
+      height: Math.floor(metrics.fontBoundingBoxAscent + metrics.fontBoundingBoxDescent),
+      actualHeight: Math.floor(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent)
+    }
   }
-}
 
-const underline = (ctx, text, x, y) => {
-  let metrics = measureText(ctx, text)
-  let fontSize = Math.floor(metrics.actualHeight * 1.4) // 140% the height 
-  switch (ctx.textAlign) {
-    case "center" : x -= (metrics.width / 2) ; break
-    case "right"  : x -= metrics.width       ; break
+  const underline = (ctx, text, x, y) => {
+    let metrics = measureText(ctx, text)
+    let fontSize = Math.floor(metrics.actualHeight * 1.4) // 140% the height 
+    switch (ctx.textAlign) {
+      case "center": x -= (metrics.width / 2); break
+      case "right": x -= metrics.width; break
+    }
+    switch (ctx.textBaseline) {
+      case "top": y += (fontSize); break
+      case "middle": y += (fontSize / 2); break
+    }
+    ctx.save()
+    ctx.beginPath()
+    ctx.strokeStyle = ctx.fillStyle
+    ctx.lineWidth = Math.ceil(fontSize * 0.08)
+    ctx.moveTo(x, y)
+    ctx.lineTo(x + metrics.width, y)
+    ctx.stroke()
+    ctx.restore()
   }
-  switch (ctx.textBaseline) {
-    case "top"    : y += (fontSize)     ; break
-    case "middle" : y += (fontSize / 2) ; break
-  }
-  ctx.save()
-  ctx.beginPath()
-  ctx.strokeStyle = ctx.fillStyle
-  ctx.lineWidth = Math.ceil(fontSize * 0.08)
-  ctx.moveTo(x, y)
-  ctx.lineTo(x + metrics.width, y)
-  ctx.stroke()
-  ctx.restore()
-}
 
   var canvas = document.createElement("canvas");
-  //canvas.style.background = "#eee"; // a valid CSS colour.
   canvas.style.background = "white"; // a valid CSS colour.
 
   var dpi = window.devicePixelRatio;
@@ -102,34 +102,29 @@ const underline = (ctx, text, x, y) => {
         }
       }
 
-      //draw individual files below all other items
-//      context.globalCompositeOperation = "destination-over";
-///*
-        context.shadowOffsetX = 6*zoomFactor;
-        context.shadowOffsetY = 6*zoomFactor;
-        context.shadowBlur = 15*zoomFactor;
-        context.shadowColor = '#5f777f';
- //       */
+      //draw individual files below all other items by drawing them before
+      //using someting context.globalCompositeOperation = "destination-over"; messes up the shadows
+      context.shadowOffsetX = 6 * zoomFactor;
+      context.shadowOffsetY = 6 * zoomFactor;
+      context.shadowBlur = 15 * zoomFactor;
+      context.shadowColor = '#5f777f';
 
       //draw the smallest (compare(a,b)=> b-a) individual files first to ensure they are always visible (we are drawing in reverse Z order)
       Array.from(individualFiles.entries())
         .toSorted((f1, f2) => f2[1].length - f1[1].length)
         .map((f) => f[1])
         .forEach(function (coordsOfGroupsOfFile) {
-        var circle = makeCircle(coordsOfGroupsOfFile);
-        //context.lineWidth = 1*zoomFactor;
-        context.beginPath();
-        context.arc(circle.x, circle.y, circle.r + 20 * zoomFactor, 0, 2 * Math.PI);
-        //context.strokeStyle = "#3ca1c3";
-        //context.stroke();
-        context.fillStyle = "#ADD8E6";
-        context.fill();
-      });
+          var circle = makeCircle(coordsOfGroupsOfFile);
+          context.beginPath();
+          context.arc(circle.x, circle.y, circle.r + 20 * zoomFactor, 0, 2 * Math.PI);
+          context.fillStyle = individualFileColor;
+          context.fill();
+        });
 
-        context.shadowOffsetX = 2*zoomFactor;
-        context.shadowOffsetY = 2*zoomFactor;
-        context.shadowBlur = 5*zoomFactor;
-        context.shadowColor = 'grey';
+      context.shadowOffsetX = 2 * zoomFactor;
+      context.shadowOffsetY = 2 * zoomFactor;
+      context.shadowBlur = 5 * zoomFactor;
+      context.shadowColor = 'grey';
 
       for (const d of links) {
         var linkData = l(d);
@@ -190,36 +185,38 @@ const underline = (ctx, text, x, y) => {
         context.stroke();
       }
 
-        context.shadowOffsetX = 0;
-        context.shadowOffsetY = 0;
-        context.shadowColor = 0;
+      context.shadowOffsetX = 0;
+      context.shadowOffsetY = 0;
+      context.shadowColor = 0;
       context.shadowBlur = 0;
 
       for (const d of nodes) {
         var nodeData = n(d);
 
-        context.lineWidth = 1;
         context.beginPath();
         //circle
-        var arcOfSize = (size) => {context.arc(d.x, d.y, size * zoomFactor, 0, 2 * Math.PI);}
+        var arcOfSize = (size) => { context.arc(d.x, d.y, size * zoomFactor, 0, 2 * Math.PI); }
         var color = getColorForEUIS(nodeData.EUISID);
         if (nodeData.informationLevel == "r") {
           //reference only groups, 'r', are empty (meaning color of IFs)
           arcOfSize(10.5); //10.5 = 12-3/2
           context.lineWidth = 3 * zoomFactor;
-          context.fillStyle = "#ADD8E6";
+          //color them from the individual file color to make them look 'empty'
+          context.fillStyle = individualFileColor;
           context.fill();
+          context.strokeStyle = color;
+          context.stroke();
         } else {
           arcOfSize(12);
           context.fillStyle = color;
           context.fill();
         }
-        context.strokeStyle = color;
-        context.stroke();
+
         if (nodeData.informationLevel == "rib") {
           context.beginPath();
           context.arc(d.x, d.y, 16 * zoomFactor, 0, 2 * Math.PI);
           context.lineWidth = 3 * zoomFactor;
+          context.strokeStyle = color;
           context.stroke();
         }
 
@@ -233,7 +230,7 @@ const underline = (ctx, text, x, y) => {
         //now
         context.fillText(nodeData.IGID, d.x, d.y + 0 * zoomFactor);
         if (nodeData.matchType == 'linked') {
-           underline(context, nodeData.IGID, d.x, d.y + 0 * zoomFactor);
+          underline(context, nodeData.IGID, d.x, d.y + 0 * zoomFactor);
         }
 
         if (individualFiles.has(nodeData.file)) {

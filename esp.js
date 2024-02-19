@@ -986,8 +986,9 @@ function CMDSystem(
 
           files.get(fileOfGroup(sp)).groups.forEach((groupOfTheIf) => {
             if (groupOfTheIf.IGID != sp) {
-              if (!isOneOf(groupOfTheIf, alreadySeenGroups)) {
-                if (!isOneOf(groupOfTheIf, originalStartPoints)) {
+              if (!isOneOf(groupOfTheIf.IGID, foundGroupsAndLinks.groups)) {
+              if (!isOneOf(groupOfTheIf.IGID, alreadySeenGroups)) {
+                if (!isOneOf(groupOfTheIf.IGID, originalStartPoints)) {
                   if (!isOneOf(groupOfTheIf.IGID, connectedOtherEnds)) {
                     if (isOneOf(groupOfTheIf.EUISID, STPRs)) {
                       hlog(
@@ -997,7 +998,7 @@ function CMDSystem(
                           sp +
                           " and beloning to EUIS " +
                           groupOfTheIf.EUISID +
-                          "which is in the STPRs, going sideway...",
+                          " which is in the STPRs, going sideway...",
                       );
 
                       //we slice for a shallow copy to avoid changing the array in place
@@ -1016,6 +1017,7 @@ function CMDSystem(
                     }
                   }
                 }
+              }
               }
             }
           });
