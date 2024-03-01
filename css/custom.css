@@ -101,3 +101,7 @@ padding: .375rem .75rem;
   background-color: #0053b2;
   border-color: #0053b2;
 }
+
+small.smaller {
+  font-size: 0.5em !important;
+}

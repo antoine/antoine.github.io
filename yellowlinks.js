@@ -158,64 +158,75 @@ function MIDSystem() {
   }
 
   const flags = {
-    biometricFalseRejection : "falseRejection",
-    biometricFalsePositive : "falsePositive",
-    biographicSameSHBOther : "sameSHBOther",
-    biographicSimilarSHBOther : "similarSHBOther",
-    biographicDifferentSHBOther : "differentSHBOther",
+    biometricFalseRejection: "falseRejection",
+    biometricFalsePositive: "falsePositive",
+    biographicSameSHBOther: "sameSHBOther",
+    biographicSimilarSHBOther: "similarSHBOther",
+    biographicDifferentSHBOther: "differentSHBOther",
   }
-  const FPA= {flag: flags.biometricFalsePositive, 
-    alternative: (thisIndex) => thisIndex + 9};
-  const FRA= {flag: flags.biometricFalseRejection, 
-    alternative: (thisIndex) => thisIndex - 9};
-  const sameA= 
-      {flag: flags.biographicSameSHBOther, 
-    alternatives:[ 
-        (thisIndex) => thisIndex + 3,
-        (thisIndex) => thisIndex + 6]};
-  const similarA= 
-      {flag: flags.biographicSimilarSHBOther, 
-    alternatives:[ 
-        (thisIndex) => thisIndex - 3,
-        (thisIndex) => thisIndex + 3]};
-  const differentA= 
-      {flag: flags.biographicDifferentSHBOther, 
-    alternatives:[ 
-        (thisIndex) => thisIndex - 3,
-        (thisIndex) => thisIndex - 6]};
+  const FPA = {
+    flag: flags.biometricFalsePositive,
+    alternative: (thisIndex) => thisIndex + 9
+  };
+  const FRA = {
+    flag: flags.biometricFalseRejection,
+    alternative: (thisIndex) => thisIndex - 9
+  };
+  const sameA =
+  {
+    flag: flags.biographicSameSHBOther,
+    alternatives: [
+      (thisIndex) => thisIndex + 3,
+      (thisIndex) => thisIndex + 6]
+  };
+  const similarA =
+  {
+    flag: flags.biographicSimilarSHBOther,
+    alternatives: [
+      (thisIndex) => thisIndex - 3,
+      (thisIndex) => thisIndex + 3]
+  };
+  const differentA =
+  {
+    flag: flags.biographicDifferentSHBOther,
+    alternatives: [
+      (thisIndex) => thisIndex - 3,
+      (thisIndex) => thisIndex - 6]
+  };
   const allProps = [
-  /*1*/  { "desc": "=,=,=", "outcomes": [outcomes.white], implicitBMF: FPA, implicitBGF:sameA },
-  /*2*/  { "desc": "=,=,≠", "outcomes": [outcomes.white], implicitBMF: FPA, implicitBGF:sameA},
-  /*3*/  { "desc": "=,=,∅", "outcomes": [outcomes.white], implicitBMF: FPA, implicitBGF:sameA},
-  /*4*/  { "desc": "=,≈,=", "outcomes": [outcomes.white], implicitBMF: FPA, implicitBGF:similarA},
-  /*5*/  { "desc": "=,≈,≠", "outcomes": [outcomes.white, outcomes.mergingRed], implicitBMF: FPA, implicitBGF:similarA},
-  /*6*/  { "desc": "=,≈,∅", "outcomes": [outcomes.white, outcomes.mergingRed], implicitBMF: FPA, implicitBGF:similarA},
-  /*7*/  { "desc": "=,≠,=", "outcomes": [outcomes.white, outcomes.mergingRed], implicitBMF: FPA, implicitBGF:differentA},
-  /*8*/  { "desc": "=,≠,≠", "outcomes": [outcomes.white, outcomes.mergingRed], implicitBMF: FPA, implicitBGF:differentA},
-  /*9*/  { "desc": "=,≠,∅", "outcomes": [outcomes.white, outcomes.mergingRed], implicitBMF: FPA, implicitBGF:differentA},
-  /*10*/  { "desc": "≠,=,=", "outcomes": [outcomes.greenLink, outcomes.nonMergingRedLink] , implicitBMF: FRA, implicitBGF:sameA},
-  /*11*/  { "desc": "≠,=,≠", "outcomes": [outcomes.greenLink, outcomes.nonMergingRedLink] , implicitBMF: FRA , implicitBGF:sameA},
-  /*12*/  { "desc": "≠,=,∅", "outcomes": [outcomes.greenLink, outcomes.nonMergingRedLink] , implicitBMF: FRA , implicitBGF:sameA},
-  /*13*/  { "desc": "≠,≈,=", "outcomes": [outcomes.greenLink, outcomes.nonMergingRedLink] , implicitBMF: FRA , implicitBGF:similarA},
-  /*14*/  { "desc": "≠,≈,≠", "outcomes": [outcomes.noLink] , implicitBMF: FRA , implicitBGF:similarA},
-  /*15*/  { "desc": "≠,≈,∅", "outcomes": [outcomes.noLink] , implicitBMF: FRA , implicitBGF:similarA},
-  /*16*/  { "desc": "≠,≠,=", "outcomes": [outcomes.greenLink, outcomes.nonMergingRedLink] , implicitBMF: FRA , implicitBGF:differentA},
-  /*17*/  { "desc": "≠,≠,≠", "outcomes": [outcomes.noLink] , implicitBMF: FRA , implicitBGF:differentA},
-  /*18*/  { "desc": "≠,≠,∅", "outcomes": [outcomes.noLink] , implicitBMF: FRA , implicitBGF:differentA},
-  /*19*/  { "desc": "∅,=,=", "outcomes": [outcomes.white] , implicitBGF:sameA},
-  /*20*/  { "desc": "∅,=,≠", "outcomes": [outcomes.noLink] , implicitBGF:sameA},
-  /*21*/  { "desc": "∅,=,∅", "outcomes": [outcomes.noLink] , implicitBGF:sameA},
-  /*22*/  { "desc": "∅,≈,=", "outcomes": [outcomes.white] , implicitBGF:similarA},
-  /*23*/  { "desc": "∅,≈,≠", "outcomes": [outcomes.noLink] , implicitBGF:similarA},
-  /*24*/  { "desc": "∅,≈,∅", "outcomes": [outcomes.noLink] , implicitBGF:similarA},
-  /*25*/  { "desc": "∅,≠,=", "outcomes": [outcomes.noLink] , implicitBGF:differentA},
-  /*26*/  { "desc": "∅,≠,≠", "outcomes": [outcomes.white, outcomes.greenLink, outcomes.mergingRed, outcomes.nonMergingRedLink] , implicitBGF:differentA},
-  /*27*/  { "desc": "∅,≠,∅", "outcomes": [outcomes.noLink] , implicitBGF:differentA}
+  /*1*/  { "desc": "=,=,=", "outcomes": [outcomes.white], implicitBMF: FPA, implicitBGF: sameA },
+  /*2*/  { "desc": "=,=,≠", "outcomes": [outcomes.white], implicitBMF: FPA, implicitBGF: sameA },
+  /*3*/  { "desc": "=,=,∅", "outcomes": [outcomes.white], implicitBMF: FPA, implicitBGF: sameA },
+  /*4*/  { "desc": "=,≈,=", "outcomes": [outcomes.white], implicitBMF: FPA, implicitBGF: similarA },
+  /*5*/  { "desc": "=,≈,≠", "outcomes": [outcomes.white, outcomes.mergingRed], implicitBMF: FPA, implicitBGF: similarA },
+  /*6*/  { "desc": "=,≈,∅", "outcomes": [outcomes.white, outcomes.mergingRed], implicitBMF: FPA, implicitBGF: similarA },
+  /*7*/  { "desc": "=,≠,=", "outcomes": [outcomes.white, outcomes.mergingRed], implicitBMF: FPA, implicitBGF: differentA },
+  /*8*/  { "desc": "=,≠,≠", "outcomes": [outcomes.white, outcomes.mergingRed], implicitBMF: FPA, implicitBGF: differentA },
+  /*9*/  { "desc": "=,≠,∅", "outcomes": [outcomes.white, outcomes.mergingRed], implicitBMF: FPA, implicitBGF: differentA },
+  /*10*/  { "desc": "≠,=,=", "outcomes": [outcomes.greenLink, outcomes.nonMergingRedLink], implicitBMF: FRA, implicitBGF: sameA },
+  /*11*/  { "desc": "≠,=,≠", "outcomes": [outcomes.greenLink, outcomes.nonMergingRedLink], implicitBMF: FRA, implicitBGF: sameA },
+  /*12*/  { "desc": "≠,=,∅", "outcomes": [outcomes.greenLink, outcomes.nonMergingRedLink], implicitBMF: FRA, implicitBGF: sameA },
+  /*13*/  { "desc": "≠,≈,=", "outcomes": [outcomes.greenLink, outcomes.nonMergingRedLink], implicitBMF: FRA, implicitBGF: similarA },
+  /*14*/  { "desc": "≠,≈,≠", "outcomes": [outcomes.noLink], implicitBMF: FRA, implicitBGF: similarA },
+  /*15*/  { "desc": "≠,≈,∅", "outcomes": [outcomes.noLink], implicitBMF: FRA, implicitBGF: similarA },
+  /*16*/  { "desc": "≠,≠,=", "outcomes": [outcomes.greenLink, outcomes.nonMergingRedLink], implicitBMF: FRA, implicitBGF: differentA },
+  /*17*/  { "desc": "≠,≠,≠", "outcomes": [outcomes.noLink], implicitBMF: FRA, implicitBGF: differentA },
+  /*18*/  { "desc": "≠,≠,∅", "outcomes": [outcomes.noLink], implicitBMF: FRA, implicitBGF: differentA },
+  /*19*/  { "desc": "∅,=,=", "outcomes": [outcomes.white], implicitBGF: sameA },
+  /*20*/  { "desc": "∅,=,≠", "outcomes": [outcomes.noLink], implicitBGF: sameA },
+  /*21*/  { "desc": "∅,=,∅", "outcomes": [outcomes.noLink], implicitBGF: sameA },
+  /*22*/  { "desc": "∅,≈,=", "outcomes": [outcomes.white], implicitBGF: similarA },
+  /*23*/  { "desc": "∅,≈,≠", "outcomes": [outcomes.noLink], implicitBGF: similarA },
+  /*24*/  { "desc": "∅,≈,∅", "outcomes": [outcomes.noLink], implicitBGF: similarA },
+  /*25*/  { "desc": "∅,≠,=", "outcomes": [outcomes.white, outcomes.greenLink, outcomes.mergingRed, outcomes.nonMergingRedLink], implicitBGF: differentA },
+  /*26*/  { "desc": "∅,≠,≠", "outcomes": [outcomes.noLink], implicitBGF: differentA },
+  /*27*/  { "desc": "∅,≠,∅", "outcomes": [outcomes.noLink], implicitBGF: differentA }
   ];
 
   //data structure
   //var nextProposalID = 0;
   var selectedProposals = [];
+
 
   this.showAllProps = function () {
     const container = idget("allProposals");
@@ -224,24 +235,47 @@ function MIDSystem() {
 
     var row = document.createElement("div");
     row.className = "row";
+
+    const listOutcomes = (proposal) => {
+      var outcomesText = ""
+      if (proposal.outcomes.length > 3) {
+        outcomesText = "all of them ";
+      } else {
+        proposal.outcomes.forEach(outcome => {
+          outcomesText += outcome + "|";
+
+        });
+      }
+      return outcomesText.substring(0, outcomesText.length - 1);
+    };
+
     allProps.forEach(function (proposal, index) {
 
       var addPropButton = document.createElement("button");
       addPropButton.type = "button";
+
+      var commonClassName = "btn mt-1";
       if (index < 9) {
-        addPropButton.className = "btn btn-success mt-1";
+        addPropButton.className = "btn-success";
       } else if (index < 18) {
-        addPropButton.className = "btn btn-warning mt-1";
-
+        addPropButton.className = "btn-warning";
       } else {
-        addPropButton.className = "btn btn-info mt-1";
-
+        addPropButton.className = "btn-info";
       }
+
+      addPropButton.className += " " + commonClassName;
+
+
       addPropButton.onclick = function () {
         mid.selectProp(index);
       };
 
-      addPropButton.innerHTML = proposal.desc;
+      addPropButton.innerHTML = "<span class='mt-n1 font-monospace'>" + proposal.desc + "</span><br>";
+      var choices = document.createElement("small");
+      choices.className = "smaller ";
+      choices.innerHTML = listOutcomes(proposal);
+      addPropButton.appendChild(choices);
+
       const colAuto = document.createElement("div");
       colAuto.className = 'col-auto';
       colAuto.appendChild(addPropButton);
@@ -251,7 +285,9 @@ function MIDSystem() {
         row = document.createElement("div");
         row.className = "row";
       }
+
     });
+
   };
 
   this.selectProp = function (proposalIndex) {
@@ -268,6 +304,7 @@ function MIDSystem() {
     const span = idget("selectedProposals");
     span.innerHTML = "";
 
+    span.appendChild(document.createElement("p"));
     var directOutcomes = [];
 
     const listOutcomes = (proposalIndex) => {
@@ -276,17 +313,19 @@ function MIDSystem() {
         outcomesText += outcome + ", ";
 
       });
-      return outcomesText.substring(0, outcomesText.length-2);
+      return outcomesText.substring(0, outcomesText.length - 2);
     };
 
+    var list = document.createElement("ul");
     //collecting proposals
     showResultOfSelectingProposals.forEach(function (proposalIndex) {
-      var prop = document.createElement("p");
-      prop.innerHTML = "case #" + (proposalIndex+1) + " " + allProps[proposalIndex].desc + " → ";
+      var prop = document.createElement("li");
+      prop.innerHTML = "case #" + (proposalIndex + 1) + " " + allProps[proposalIndex].desc + " → ";
       prop.innerHTML += listOutcomes(proposalIndex);
       directOutcomes.push(...allProps[proposalIndex].outcomes);
-      span.appendChild(prop);
+      list.appendChild(prop);
     });
+    span.appendChild(list);
 
     //showing outcomes
     var uniqueDirectOutcomes = [... new Set(directOutcomes)];
@@ -302,7 +341,7 @@ function MIDSystem() {
 
     var prop = document.createElement("p");
     if (hasAtLeastALink) {
-      prop.innerHTML = "possible explicit decisions: " + directDecisionsText.substring(0, directDecisionsText.length -2);
+      prop.innerHTML = "possible explicit decisions: " + directDecisionsText.substring(0, directDecisionsText.length - 2);
 
     } else {
       prop.innerHTML = "no link to be created ";
@@ -320,30 +359,30 @@ function MIDSystem() {
     showResultOfSelectingProposals.forEach(function (proposalIndex) {
       var prop = allProps[proposalIndex];
       //we only care about those proposals leading to a link to start with
-        allOutcomes.push({flags:[], outcomes:[...prop.outcomes]});
-        //pushing the biometric flag outcomes if any
-        if (ifdef(prop.implicitBMF)) {
-          var implicitPropIndex = prop.implicitBMF.alternative(proposalIndex);
-          var implicitProp = allProps[implicitPropIndex];
-          allOutcomes.push({flags:[prop.implicitBMF.flag], outcomes:[...implicitProp.outcomes]});
-          //explore the BGF alternatives as well
-          implicitProp.implicitBGF.alternatives.forEach(alternativeBG => {
-            allOutcomes.push({flags:[prop.implicitBMF.flag, implicitProp.implicitBGF.flag], outcomes:[...allProps[alternativeBG(implicitPropIndex)].outcomes]});
-          });
-        }
-        prop.implicitBGF.alternatives.forEach(alternativeBG => {
-          allOutcomes.push({flags:[prop.implicitBGF.flag], outcomes:[...allProps[alternativeBG(proposalIndex)].outcomes]});
+      allOutcomes.push({ flags: [], outcomes: [...prop.outcomes] });
+      //pushing the biometric flag outcomes if any
+      if (ifdef(prop.implicitBMF)) {
+        var implicitPropIndex = prop.implicitBMF.alternative(proposalIndex);
+        var implicitProp = allProps[implicitPropIndex];
+        allOutcomes.push({ flags: [prop.implicitBMF.flag], outcomes: [...implicitProp.outcomes] });
+        //explore the BGF alternatives as well
+        implicitProp.implicitBGF.alternatives.forEach(alternativeBG => {
+          allOutcomes.push({ flags: [prop.implicitBMF.flag, implicitProp.implicitBGF.flag], outcomes: [...allProps[alternativeBG(implicitPropIndex)].outcomes] });
         });
+      }
+      prop.implicitBGF.alternatives.forEach(alternativeBG => {
+        allOutcomes.push({ flags: [prop.implicitBGF.flag], outcomes: [...allProps[alternativeBG(proposalIndex)].outcomes] });
+      });
     });
-    
+
     var uniqueImplicitOutcomes = new Map();
 
     allOutcomes.forEach(flagBasedOutcomes => {
       flagBasedOutcomes.outcomes.forEach(outcome => {
         if (uniqueImplicitOutcomes.has(outcome)) {
-          var outcomeFlags= uniqueImplicitOutcomes.get(outcome); 
+          var outcomeFlags = uniqueImplicitOutcomes.get(outcome);
           //remove biographic flags not shared for a given outcome, also remove all biometric error flasg
-          var commonFlags = outcomeFlags.filter(value => 
+          var commonFlags = outcomeFlags.filter(value =>
             ![flags.biometricFalsePositive, flags.biometricFalseRejection].includes(value) && flagBasedOutcomes.flags.includes(value))
           //and now add back all biometric error flags from both list
           if (isOneOf(flags.biometricFalsePositive, outcomeFlags) || isOneOf(flags.biometricFalsePositive, flagBasedOutcomes.flags)) {
@@ -362,21 +401,18 @@ function MIDSystem() {
 
 
     var hasAtLeastALink = false;
-    var directDecisionsText = document.createElement("ul"); 
-    uniqueImplicitOutcomes.forEach((flags, outcome)=> {
-        hasAtLeastALink = true;
-        var item = document.createElement("li");
-        item.innerHTML = JSON.stringify(outcome)+ " => flags: " + JSON.stringify(flags) ;
-        directDecisionsText.appendChild(item);
+    var directDecisionsText = document.createElement("ul");
+    uniqueImplicitOutcomes.forEach((flags, outcome) => {
+      hasAtLeastALink = true;
+      var item = document.createElement("li");
+      item.innerHTML = JSON.stringify(outcome) + " => flags: " + JSON.stringify(flags);
+      directDecisionsText.appendChild(item);
 
     });
 
 
     var prop = document.createElement("p");
-    if (hasAtLeastALink) {
-      prop.innerHTML = "all possible decisions: ";
-
-    } else {
+    if (!hasAtLeastALink) {
       prop.innerHTML = "no link to be created ";
     }
     span.appendChild(prop);

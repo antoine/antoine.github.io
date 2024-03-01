@@ -30,17 +30,38 @@
     <div class="container-xxl">
     
       <div class="row">
-        <div class="col-3" id="allProposals">
-          <!-- buttons will be added here by javascript, don't want to maintain the structure twice -->
+        <div class="row">
+          <div class="col-3" >
+            <h4>available proposals</h4>
+            <span class="text-secondary">
+          Select the proposals you wish to consider in your yellow link: 
+</span>
+          </div>
+          <div class="col-3" >
+            <h4>selected proposals</h4>
+            <span class="text-secondary">
+          List all selected proposals, and based on those lists the explicit outcomes available (nonwithstanding the usage of one or more flag):
+</span>
+          </div>
+          <div class="col-6" >
+            <h4>possible outcomes</h4>
+            <span class="text-secondary">
+          Now, based on the same selected proposals lists all the outcomes available if flags where to be set implicitly (and for each outcome the flags that would be triggered):
+</span>
+          </div>
         </div>
-        <div class="col-3">
-          <span id="selectedProposals">
-        </div>
-        <div class="col-6">
-          <span id="implicitDecisions">
+        <div class="row">
+          <div class="col-3" id="allProposals">
+          </div>
+          <div class="col-3">
+            <span id="selectedProposals">
+          </div>
+          <div class="col-6">
+            <span id="implicitDecisions">
+          </div>
         </div>
       </div>
-      <hr>
+
       <div id="ensuringAllFlagsArePossible">
       </div>
 
