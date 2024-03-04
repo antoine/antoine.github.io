@@ -768,15 +768,19 @@ function CMDSystem(
       matches: [],
       links: [],
     };
+
+    const onlyTheStartingGroups = directMatchesToConsider.map((osp) => osp.IGID);
+
     var newDirectMatchesAndLinks = followLinksDepthFirst(
       directMatchesToConsider,
       null,
       [],
-      2,
-      directMatchesToConsider,
+      1,
+      onlyTheStartingGroups,
       systemsToWhichAccessIsGranted,
     );
 
+    //establishing the green links that should be returned
     const foundWhiteLinks = [];
     links.forEach((link) => {
       if (link.colour == "WL") {
@@ -806,7 +810,7 @@ function CMDSystem(
         console.log("GL>" + stuff);
       }
     }
-    //fetch green links considering newDirectMatches[].IGID and directMatchesToConsider together
+    //fetch green links considering newDirectMatches[].IGID and onlyTheStartingGroup together
     links.forEach((link) => {
       //for all green links
       if (link.colour == "GL") {
@@ -830,9 +834,9 @@ function CMDSystem(
                 );
                 //were both ends 'matches', valid for green links? either they were direct matches or a white link connecting to them is returned.
                 if (
-                  (isOneOf(oneEnd, directMatchesToConsider) ||
+                  (isOneOf(oneEnd, onlyTheStartingGroups) ||
                     participatesInAWhiteLink(oneEnd, foundWhiteLinks)) &&
-                  (isOneOf(otherEnd, directMatchesToConsider) ||
+                  (isOneOf(otherEnd, onlyTheStartingGroups) ||
                     participatesInAWhiteLink(otherEnd, foundWhiteLinks))
                 ) {
                   newDirectMatchesAndLinks.links.push(link.ID);
@@ -868,6 +872,7 @@ function CMDSystem(
         console.log(inc + stuff);
       }
     }
+    hlog("looking for links from starting points " + JSON.stringify(startPoints));
 
     const foundGroupsAndLinks = {
       groups: [],
@@ -881,7 +886,8 @@ function CMDSystem(
         foundGroupsAndLinks.links.push(comingFromLink);
       }
 
-      startPoints.forEach((sp) => {
+      startPoints.forEach((startPoint) => {
+        var sp = startPoint.IGID;
         //get all viable links from sp
         if (isOneOf(sp, alreadySeenGroups)) {
           hlog(
@@ -926,12 +932,12 @@ function CMDSystem(
 
                 //excluding the groups we might have found
                 if (!isOneOf(otherEndIG.IGID, foundGroupsAndLinks.groups)) {
-                  //we always follow RL because there is always at least one STPR when entering this routine
+                  //we always follow RL if the startpoint has identityDataReturned because there is always at least one STPR when entering this routine
                   //we follow WL only if either systems are STPRs owned
                   if (
-                    link.colour == "MRL" ||
-                    link.colour == "NMRL" ||
-                    (link.colour == "WL" &&
+                    ((startPoint.identityDataReturned || isOneOf(groupAndIFID(startPoint.IGID).group.EUISID, STPRs)) 
+                      && ( link.colour == "MRL" || link.colour == "NMRL"))
+                   || (link.colour == "WL" &&
                       isOneOf(thisEndIG.EUISID, STPRs) &&
                       isOneOf(otherEndIG.EUISID, STPRs))
                   ) {
@@ -940,12 +946,12 @@ function CMDSystem(
                     const newlySeenGroups = alreadySeenGroups.slice(0);
                     newlySeenGroups.push(sp);
                     connectedOtherEnds.push(otherEndIG.IGID);
-
+                    //idendityDataReturned is true as following a link is only done when access is granted to identity data
                     const foundDeeper = followLinksDepthFirst(
-                      [otherEndIG.IGID],
+                      [{IGID: otherEndIG.IGID, identityDataReturned:true}],
                       link.ID,
                       newlySeenGroups,
-                      increment + 2,
+                      increment + 1,
                       originalStartPoints,
                       STPRs,
                     );
@@ -963,6 +969,8 @@ function CMDSystem(
                           " which is not an STPR " +
                           JSON.stringify(STPRs),
                       );
+                    } else if (link.colour == "MRL" || link.colour == "NMRL") {
+                      hlog("it's " + link.colour + " but we do not have the identity data returned from the starting point, and owning system is not STPR");
                     } else {
                       hlog("logic issue!!!!");
                     }
@@ -970,7 +978,7 @@ function CMDSystem(
                 } else {
                   hlog(
                     "previous searches have already been to " +
-                      sp +
+                      otherEndIG.IGID +
                       ", disregarding",
                   );
                 }
@@ -1005,7 +1013,7 @@ function CMDSystem(
                       const newlySeenGroups = alreadySeenGroups.slice(0);
                       newlySeenGroups.push(sp);
                       const foundDeeper = followLinksDepthFirst(
-                        [groupOfTheIf.IGID],
+                        [{IGID:groupOfTheIf.IGID, identityDataReturned: true}],
                         null,
                         newlySeenGroups,
                         increment + 2,
@@ -1400,6 +1408,7 @@ function CMDSystem(
 }
 
 function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
+
   this.fetchGroups = function (systemsForCIRQuery, groupsForCIRQuery) {
     //move query graph outside of the tabs
     groupsQueryGraph.reset();
@@ -1416,8 +1425,9 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
     });
 
     if (directMatchesToConsider.length > 0) {
+
       const linksToReturn = cmd.followLinks(
-        directMatchesToConsider.map((g) => g.IGID),
+        directMatchesToConsider.map((g) => {return {IGID: g.IGID, identityDataReturned: true}}),
         systemsForCIRQuery.array(),
       );
 
@@ -1426,6 +1436,7 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
         directMatches: directMatchesToConsider,
       });
 
+      //building structure from results for graphing purposes
       const links = cmd.getLinks(linksToReturn.links);
       const filteredFiles = cmd.mergeResultFiles(
         cmd.mergeResultFiles(
@@ -1459,9 +1470,12 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
     var motivations = [];
     var queriedLink = currentValue("queriedLink");
     var link = cmd.getLink(queriedLink);
+
+    //various types of link fetching operations are possible
     if (ifdef(link)) {
       var links;
       var filteredFiles;
+      //we will first fetch the data and then afterward graph it
       var graphThis = false;
       if (querytype == "YLR1" || querytype == "YLR2") {
         //if not verifying authority then the profile cannot be used
@@ -1508,7 +1522,7 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
             );
             links = linksToReturn;
           } else {
-            //querytype == 'YLR2'
+            //meaning querytype == 'YLR2'
 
             if (link.colour == "YL") {
               //walk all paths between the 2 groups of link which are not direct
@@ -1662,9 +1676,12 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
         midRespondWith("error");
         motivations.push("querytype " + querytype + " not yet supported");
       }
+
+      //if we've found a link we will graph it
       if (graphThis) {
         //if system access then run DMF query (+linked matches again) on the basis of the groups found
         if (systemsForMIDQuery.array().length > 0) {
+          //establishing the list of groups that the followLinks function should start from
           const groups = [];
           filteredFiles.forEach((file) => {
             file.groups.forEach((group) => {
@@ -1672,7 +1689,7 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
             });
           });
           const linksToReturn = cmd.followLinks(
-            groups,
+            groups.map((g) => {return {IGID: g, identityDataReturned: false}}),
             systemsForMIDQuery.array(),
           );
           const newLinks = cmd.getLinks(linksToReturn.links);
@@ -1689,6 +1706,7 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
             });
             return connectedToRed;
           }
+          //TODO check for red link issue, if no system access and no red link towards an IG then a ref should be returned
           const newFilteredFiles = cmd.mergeResultFiles(
             cmd.mergeResultFiles(
               filteredFiles,
