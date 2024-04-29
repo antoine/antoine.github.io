@@ -1409,61 +1409,6 @@ function CMDSystem(
 
 function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
 
-  this.fetchGroups = function (systemsForCIRQuery, groupsForCIRQuery) {
-    //move query graph outside of the tabs
-    groupsQueryGraph.reset();
-
-    var motivations = [];
-    //exclude from direct matches the groups for which the system is not toggled as those groups
-    //are not visible as selected on the UI but their statue remains thus in the groupsForCIRQuery construct
-    var directMatchesToConsider = [];
-    groupsForCIRQuery.array().forEach(function (selectedGroup) {
-      const group = cmd.getGroup(selectedGroup);
-      if (systemsForCIRQuery.values().has(group.EUISID)) {
-        directMatchesToConsider.push(group);
-      }
-    });
-
-    if (directMatchesToConsider.length > 0) {
-
-      const linksToReturn = cmd.followLinks(
-        directMatchesToConsider.map((g) => {return {IGID: g.IGID, identityDataReturned: true}}),
-        systemsForCIRQuery.array(),
-      );
-
-      cirRespondWith({
-        links: linksToReturn,
-        directMatches: directMatchesToConsider,
-      });
-
-      //building structure from results for graphing purposes
-      const links = cmd.getLinks(linksToReturn.links);
-      const filteredFiles = cmd.mergeResultFiles(
-        cmd.mergeResultFiles(
-          cmd.getFilesFromLinks(links, "linked", (g) =>
-            isOneOf(g.EUISID, systemsForCIRQuery.array()) ? "rib" : "ri",
-          ),
-          cmd.getFilesFromGroups(linksToReturn.groups, "linked", (g) =>
-            isOneOf(g.EUISID, systemsForCIRQuery.array()) ? "rib" : "ri",
-          ),
-        ),
-        cmd.getFilesFromGroups(
-          directMatchesToConsider.map((g) => g.IGID),
-          "direct",
-          (g) => "rib",
-        ),
-      );
-
-      groupsQueryGraph.graphThis(
-        groupsQueryGraph.buildGraphData(filteredFiles, links),
-      );
-    } else {
-      motivations.push("you didn't select a group");
-      cirRespondWith("no results found");
-    }
-    cirMotivateResponseWith(motivations);
-  };
-
   this.fetchLink = function (systemsForMIDQuery) {
     linksQueryGraph.reset();
     var querytype = currentValue("LMFQueryTypes");
@@ -1747,6 +1692,61 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
 
     midMotivateResponseWith(motivations);
   };
+
+  this.fetchGroups = function (systemsForCIRQuery, groupsForCIRQuery) {
+    groupsQueryGraph.reset();
+
+    var motivations = [];
+    //exclude from direct matches the groups for which the system is not toggled as those groups
+    //are not visible as selected on the UI but their statue remains thus in the groupsForCIRQuery construct
+    var directMatchesToConsider = [];
+    groupsForCIRQuery.array().forEach(function (selectedGroup) {
+      const group = cmd.getGroup(selectedGroup);
+      if (systemsForCIRQuery.values().has(group.EUISID)) {
+        directMatchesToConsider.push(group);
+      }
+    });
+
+    if (directMatchesToConsider.length > 0) {
+
+      const linksToReturn = cmd.followLinks(
+        directMatchesToConsider.map((g) => {return {IGID: g.IGID, identityDataReturned: true}}),
+        systemsForCIRQuery.array(),
+      );
+
+      cirRespondWith({
+        links: linksToReturn,
+        directMatches: directMatchesToConsider,
+      });
+
+      //building structure from results for graphing purposes
+      const links = cmd.getLinks(linksToReturn.links);
+      const filteredFiles = cmd.mergeResultFiles(
+        cmd.mergeResultFiles(
+          cmd.getFilesFromLinks(links, "linked", (g) =>
+            isOneOf(g.EUISID, systemsForCIRQuery.array()) ? "rib" : "ri",
+          ),
+          cmd.getFilesFromGroups(linksToReturn.groups, "linked", (g) =>
+            isOneOf(g.EUISID, systemsForCIRQuery.array()) ? "rib" : "ri",
+          ),
+        ),
+        cmd.getFilesFromGroups(
+          directMatchesToConsider.map((g) => g.IGID),
+          "direct",
+          (g) => "rib",
+        ),
+      );
+
+      groupsQueryGraph.graphThis(
+        groupsQueryGraph.buildGraphData(filteredFiles, links),
+      );
+    } else {
+      motivations.push("you didn't select a group");
+      cirRespondWith("no results found");
+    }
+    cirMotivateResponseWith(motivations);
+  };
+
 
   var midRespondWith = function (value) {
     respondWith(value, "MIDQueryResult");
