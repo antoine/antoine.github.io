@@ -1703,44 +1703,56 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
     midMotivateResponseWith(motivations);
   };
   
-  var downgradeNonWLConnectedMatches = function(businessMatches, allLinks, newFilteredFiles) {
-          //start from direct matches, follow all returned white and downgrade all 
-          //rib to ri in case there are no white link connecting the 
-          //indirect matches with the direct matches
-          var newBusinessMatchesFound = businessMatches;
-          while (newBusinessMatchesFound.length>0) {
-            var potentialNewBusinessMatches = [];
-            newBusinessMatchesFound.forEach((g) => {
-              allLinks.forEach((l) => {
-                if (l.colour == 'WL' && (l.lower == g || l.higher == g)) {
-                  var potentialBusinessMatch;
-                  if (l.lower == g) {
-                    potentialBusinessMatch = l.higher;
-                  } else {
-                    //l.higher == g
-                    potentialBusinessMatch = l.lower;
-                  }
-                  //testing that potentialBusinessMatch was not already a potentialBusinessMatch
-                  if (!isOneOf(potentialBusinessMatch, businessMatches)) {
-                    potentialNewBusinessMatches.push(potentialBusinessMatch);
-                  }
-                }
-
-              });
-            });
-
-            businessMatches.push(...potentialNewBusinessMatches);
-            newBusinessMatchesFound = potentialNewBusinessMatches;
+  var downgradeNonWLConnectedMatches = function (businessMatches, allLinks, newFilteredFiles) {
+    //start from direct matches, follow all returned white and propose to downgrade all 
+    //rib to ri in case there are no white link connecting the 
+    //indirect matches with the direct matches
+    var newBusinessMatchesFound = businessMatches;
+    while (newBusinessMatchesFound.length > 0) {
+      var potentialNewBusinessMatches = [];
+      newBusinessMatchesFound.forEach((g) => {
+        allLinks.forEach((l) => {
+          if (l.colour == 'WL' && (l.lower == g || l.higher == g)) {
+            var potentialBusinessMatch;
+            if (l.lower == g) {
+              potentialBusinessMatch = l.higher;
+            } else {
+              //l.higher == g
+              potentialBusinessMatch = l.lower;
+            }
+            //testing that potentialBusinessMatch was not already a potentialBusinessMatch
+            if (!isOneOf(potentialBusinessMatch, businessMatches)) {
+              potentialNewBusinessMatches.push(potentialBusinessMatch);
+            }
           }
 
-          newFilteredFiles.forEach((file) => {
-            file.groups.forEach((group) => {
-              if (!isOneOf(group.IGID, businessMatches) && group.informationLevel == 'rib') {
-                console.log('group '+group.IGID+' information level downgraded from rib to ri due to lack of WL connection to a direct match');
-                group.informationLevel = 'ri';
-              }
-            });
-          });
+        });
+      });
+
+      businessMatches.push(...potentialNewBusinessMatches);
+      newBusinessMatchesFound = potentialNewBusinessMatches;
+    }
+
+    //not downgrading rib matches which are in the same IF as a business match
+    newFilteredFiles.forEach((file) => {
+      var groupsToDowngrade = [];
+      var businessMatchInFile = false;
+      file.groups.forEach((group) => {
+        var isBusinessMatch = isOneOf(group.IGID, businessMatches);
+        if (!isBusinessMatch && group.informationLevel == 'rib') {
+          groupsToDowngrade.push(group);
+        } else if (isBusinessMatch) {
+          businessMatchInFile = true;
+        }
+      });
+      if (!businessMatchInFile) {
+        groupsToDowngrade.forEach((group) => {
+          console.log('group ' + group.IGID + ' information level downgraded from rib to ri due to ' +
+            'lack of business (WL or iDM) connection to a direct match');
+          group.informationLevel = 'ri';
+        });
+      }
+    });
   }
 
   this.fetchGroups = function (systemsForCIRQuery, groupsForCIRQuery) {
