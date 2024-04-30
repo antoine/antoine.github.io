@@ -1493,6 +1493,7 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
 
                 graphThis = true;
                 links = cmd.getLinks(indirectPaths);
+                //only return identity data for the 2 original groups
                 filteredFiles = cmd.getFilesFromLinks(links, "direct", (g) =>
                   isOneOf(g.IGID, [link.lower, link.higher]) ? "ri" : "r",
                 );
@@ -1575,6 +1576,7 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
             //build files from the found results
 
             graphThis = true;
+            //only return identity data for the 2 original groups
             filteredFiles = cmd.getFilesFromLinks([link], "direct", "ri");
             links = [link];
           } else {
@@ -1601,6 +1603,7 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
               //build files and links from the found results
               graphThis = true;
               links = cmd.getLinks(indirectPaths);
+                //only return identity data for the 2 original groups
               filteredFiles = cmd.getFilesFromLinks(links, "direct", (g) =>
                 isOneOf(g.IGID, [link.lower, link.higher]) ? "ri" : "r",
               );
@@ -1628,16 +1631,19 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
         if (systemsForMIDQuery.array().length > 0) {
           //establishing the list of groups that the followLinks function should start from
           const groups = [];
+
           filteredFiles.forEach((file) => {
             file.groups.forEach((group) => {
               groups.push(group.IGID);
             });
           });
+
           const linksToReturn = cmd.followLinks(
             groups.map((g) => {return {IGID: g, identityDataReturned: false}}),
             systemsForMIDQuery.array(),
           );
           const newLinks = cmd.getLinks(linksToReturn.links);
+
           function isConnectedToRed(groupIGID, links) {
             var connectedToRed = false;
             links.every((l) => {
@@ -1651,6 +1657,7 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
             });
             return connectedToRed;
           }
+
           //TODO check for red link issue, if no system access and no red link towards an IG then a ref should be returned
           const newFilteredFiles = cmd.mergeResultFiles(
             cmd.mergeResultFiles(
@@ -1672,6 +1679,9 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
             ),
           );
           const allLinks = Array.from(new Set(links.concat(newLinks)).values());
+
+          downgradeNonWLConnectedMatches(groups, allLinks, newFilteredFiles)
+
           linksQueryGraph.graphThis(
             linksQueryGraph.buildGraphData(newFilteredFiles, allLinks),
           );
@@ -1692,6 +1702,46 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
 
     midMotivateResponseWith(motivations);
   };
+  
+  var downgradeNonWLConnectedMatches = function(businessMatches, allLinks, newFilteredFiles) {
+          //start from direct matches, follow all returned white and downgrade all 
+          //rib to ri in case there are no white link connecting the 
+          //indirect matches with the direct matches
+          var newBusinessMatchesFound = businessMatches;
+          while (newBusinessMatchesFound.length>0) {
+            var potentialNewBusinessMatches = [];
+            newBusinessMatchesFound.forEach((g) => {
+              allLinks.forEach((l) => {
+                if (l.colour == 'WL' && (l.lower == g || l.higher == g)) {
+                  var potentialBusinessMatch;
+                  if (l.lower == g) {
+                    potentialBusinessMatch = l.higher;
+                  } else {
+                    //l.higher == g
+                    potentialBusinessMatch = l.lower;
+                  }
+                  //testing that potentialBusinessMatch was not already a potentialBusinessMatch
+                  if (!isOneOf(potentialBusinessMatch, businessMatches)) {
+                    potentialNewBusinessMatches.push(potentialBusinessMatch);
+                  }
+                }
+
+              });
+            });
+
+            businessMatches.push(...potentialNewBusinessMatches);
+            newBusinessMatchesFound = potentialNewBusinessMatches;
+          }
+
+          newFilteredFiles.forEach((file) => {
+            file.groups.forEach((group) => {
+              if (!isOneOf(group.IGID, businessMatches) && group.informationLevel == 'rib') {
+                console.log('group '+group.IGID+' information level downgraded from rib to ri due to lack of WL connection to a direct match');
+                group.informationLevel = 'ri';
+              }
+            });
+          });
+  }
 
   this.fetchGroups = function (systemsForCIRQuery, groupsForCIRQuery) {
     groupsQueryGraph.reset();
@@ -1700,6 +1750,7 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
     //exclude from direct matches the groups for which the system is not toggled as those groups
     //are not visible as selected on the UI but their statue remains thus in the groupsForCIRQuery construct
     var directMatchesToConsider = [];
+
     groupsForCIRQuery.array().forEach(function (selectedGroup) {
       const group = cmd.getGroup(selectedGroup);
       if (systemsForCIRQuery.values().has(group.EUISID)) {
@@ -1721,6 +1772,7 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
 
       //building structure from results for graphing purposes
       const links = cmd.getLinks(linksToReturn.links);
+
       const filteredFiles = cmd.mergeResultFiles(
         cmd.mergeResultFiles(
           cmd.getFilesFromLinks(links, "linked", (g) =>
@@ -1736,6 +1788,8 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
           (g) => "rib",
         ),
       );
+
+      downgradeNonWLConnectedMatches(directMatchesToConsider.map((g) => g.IGID), links, filteredFiles)
 
       groupsQueryGraph.graphThis(
         groupsQueryGraph.buildGraphData(filteredFiles, links),
