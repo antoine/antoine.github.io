@@ -1709,22 +1709,26 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
     //indirect matches with the direct matches
     var newBusinessMatchesFound = businessMatches;
     while (newBusinessMatchesFound.length > 0) {
+      //each loop we'll fill in the new found matches in potentialNewBusinessMatches and replace newBusinessMatchesFound with it at the end
       var potentialNewBusinessMatches = [];
       newBusinessMatchesFound.forEach((g) => {
         allLinks.forEach((l) => {
-          if (l.colour == 'WL' && (l.lower == g || l.higher == g)) {
-            var potentialBusinessMatch;
-            if (l.lower == g) {
-              potentialBusinessMatch = l.higher;
-            } else {
-              //l.higher == g
-              potentialBusinessMatch = l.lower;
-            }
-            //testing that potentialBusinessMatch was not already a potentialBusinessMatch
-            if (!isOneOf(potentialBusinessMatch, businessMatches)) {
-              potentialNewBusinessMatches.push(potentialBusinessMatch);
-            }
-          }
+          if (l.lower == g || l.higher == g) {
+
+            if (l.colour == 'WL') {
+              var potentialBusinessMatch;
+              if (l.lower == g) {
+                potentialBusinessMatch = l.higher;
+              } else {
+                //l.higher == g
+                potentialBusinessMatch = l.lower;
+              }
+              //testing that potentialBusinessMatch was not already a businessMatch
+              if (!isOneOf(potentialBusinessMatch, businessMatches)) {
+                potentialNewBusinessMatches.push(potentialBusinessMatch);
+              }
+            } 
+                    }
 
         });
       });
@@ -1732,12 +1736,16 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
       businessMatches.push(...potentialNewBusinessMatches);
       newBusinessMatchesFound = potentialNewBusinessMatches;
     }
+    
 
     //not downgrading rib matches which are in the same IF as a business match
     newFilteredFiles.forEach((file) => {
       var groupsToDowngrade = [];
+      //we downgrade all rib groups to ri when there are in a file where no business match (direct+WL) was found
       var businessMatchInFile = false;
+
       file.groups.forEach((group) => {
+        console.log('checking if group has an '+group.IGID);
         var isBusinessMatch = isOneOf(group.IGID, businessMatches);
         if (!isBusinessMatch && group.informationLevel == 'rib') {
           groupsToDowngrade.push(group);
@@ -1745,14 +1753,23 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
           businessMatchInFile = true;
         }
       });
+
       if (!businessMatchInFile) {
         groupsToDowngrade.forEach((group) => {
           console.log('group ' + group.IGID + ' information level downgraded from rib to ri due to ' +
-            'lack of business (WL or iDM) connection to a direct match');
+            'lack of direct business (WL) connection to a direct match');
           group.informationLevel = 'ri';
         });
       }
+
     });
+
+
+    /*
+    if (matchesWithoutPurpose.length > 0) {
+      console.log('found matches without purposes, downgrading to r the following: '+tojson(matchesWithoutPurpose));
+    }
+    */
   }
 
   this.fetchGroups = function (systemsForCIRQuery, groupsForCIRQuery) {
@@ -1785,6 +1802,7 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
       //building structure from results for graphing purposes
       const links = cmd.getLinks(linksToReturn.links);
 
+      //merging 3 structures while choosing purpose of returning information
       const filteredFiles = cmd.mergeResultFiles(
         cmd.mergeResultFiles(
           cmd.getFilesFromLinks(links, "linked", (g) =>
@@ -1801,6 +1819,7 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
         ),
       );
 
+      //downgrading purpose for matches not a direct match, or connected by a white link to a direct match 
       downgradeNonWLConnectedMatches(directMatchesToConsider.map((g) => g.IGID), links, filteredFiles)
 
       groupsQueryGraph.graphThis(
