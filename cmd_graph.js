@@ -222,7 +222,11 @@ function D3ForceGraph(graphContainerId, ratio, zoomFactor) {
 
         //context.strokeStyle = "white";
 
+        if (nodeData.informationLevel == "r") {
+        context.fillStyle = color;
+        } else {
         context.fillStyle = "white";
+        }
         context.textAlign = "center";
         context.textBaseline = "middle";
         //+1.5 to y to center the text lower on the circles, but that's only on

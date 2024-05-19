@@ -1741,26 +1741,48 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
     //not downgrading rib matches which are in the same IF as a business match
     newFilteredFiles.forEach((file) => {
       var groupsToDowngrade = [];
+      var groupsWithoutPurpose = [];
       //we downgrade all rib groups to ri when there are in a file where no business match (direct+WL) was found
       var businessMatchInFile = false;
 
       file.groups.forEach((group) => {
-        console.log('checking if group has an '+group.IGID);
+        //console.log('checking group '+group.IGID);
         var isBusinessMatch = isOneOf(group.IGID, businessMatches);
         if (!isBusinessMatch && group.informationLevel == 'rib') {
-          groupsToDowngrade.push(group);
+
+          var purposeGivenByLink = false;
+          allLinks.every((l) => {
+            if (l.lower == group.IGID || l.higher == group.IGID) {
+              purposeGivenByLink = true;
+              return false;
+            } else {
+              return true;
+            }
+
+          });
+          if (purposeGivenByLink) {
+            groupsToDowngrade.push(group);
+          } else {
+            groupsWithoutPurpose.push(group);
+          }
         } else if (isBusinessMatch) {
           businessMatchInFile = true;
         }
       });
 
-      if (!businessMatchInFile) {
+      //temporary: indirect matches have no purposes without a link to them
+      //if (!businessMatchInFile) {
         groupsToDowngrade.forEach((group) => {
           console.log('group ' + group.IGID + ' information level downgraded from rib to ri due to ' +
             'lack of direct business (WL) connection to a direct match');
           group.informationLevel = 'ri';
         });
-      }
+        groupsWithoutPurpose.forEach((group) => {
+          console.log('group ' + group.IGID + ' information level downgraded from rib to r due to ' +
+            'lack of purpose');
+          group.informationLevel = 'r';
+        });
+      //}
 
     });
 
