@@ -1704,9 +1704,7 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
   };
   
   var downgradeNonWLConnectedMatches = function (businessMatches, allLinks, newFilteredFiles) {
-    //start from direct matches, follow all returned white and propose to downgrade all 
-    //rib to ri in case there are no white link connecting the 
-    //indirect matches with the direct matches
+    //start from direct matches, follow all returned white link and leave the purpose as is for them.
     var newBusinessMatchesFound = businessMatches;
     while (newBusinessMatchesFound.length > 0) {
       //each loop we'll fill in the new found matches in potentialNewBusinessMatches and replace newBusinessMatchesFound with it at the end
@@ -1736,53 +1734,47 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
       businessMatches.push(...potentialNewBusinessMatches);
       newBusinessMatchesFound = potentialNewBusinessMatches;
     }
-    
 
     //not downgrading rib matches which are in the same IF as a business match
     newFilteredFiles.forEach((file) => {
       var groupsToDowngrade = [];
       var groupsWithoutPurpose = [];
-      //we downgrade all rib groups to ri when there are in a file where no business match (direct+WL) was found
-      var businessMatchInFile = false;
 
       file.groups.forEach((group) => {
         //console.log('checking group '+group.IGID);
         var isBusinessMatch = isOneOf(group.IGID, businessMatches);
         if (!isBusinessMatch && group.informationLevel == 'rib') {
 
-          var purposeGivenByLink = false;
-          allLinks.every((l) => {
+          var highestPurpose = null;
+
+          allLinks.forEach((l) => {
             if (l.lower == group.IGID || l.higher == group.IGID) {
-              purposeGivenByLink = true;
-              return false;
-            } else {
-              return true;
+              if (l.colour == 'WL') {
+                highestPurpose = 'white';
+              } else if (highestPurpose != 'white' && (l.colour == 'MRL' || l.colour == 'NMRL')) {
+                highestPurpose = 'red';
+              }
             }
 
           });
-          if (purposeGivenByLink) {
+          if (highestPurpose == 'red') {
             groupsToDowngrade.push(group);
-          } else {
+          } else if (highestPurpose == null) {
             groupsWithoutPurpose.push(group);
           }
-        } else if (isBusinessMatch) {
-          businessMatchInFile = true;
         }
       });
 
-      //temporary: indirect matches have no purposes without a link to them
-      //if (!businessMatchInFile) {
-        groupsToDowngrade.forEach((group) => {
-          console.log('group ' + group.IGID + ' information level downgraded from rib to ri due to ' +
-            'lack of direct business (WL) connection to a direct match');
-          group.informationLevel = 'ri';
-        });
-        groupsWithoutPurpose.forEach((group) => {
-          console.log('group ' + group.IGID + ' information level downgraded from rib to r due to ' +
-            'lack of purpose');
-          group.informationLevel = 'r';
-        });
-      //}
+      groupsToDowngrade.forEach((group) => {
+        console.log('group ' + group.IGID + ' information level downgraded from rib to ri due to ' +
+          'lack of direct business (WL) connection to a direct match');
+        group.informationLevel = 'ri';
+      });
+      groupsWithoutPurpose.forEach((group) => {
+        console.log('group ' + group.IGID + ' information level downgraded from rib to r due to ' +
+          'lack of purpose');
+        group.informationLevel = 'r';
+      });
 
     });
 
