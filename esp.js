@@ -1713,7 +1713,7 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
         allLinks.forEach((l) => {
           if (l.lower == g || l.higher == g) {
 
-            if (l.colour == 'WL') {
+            if (l.colour == 'WL' ) {
               var potentialBusinessMatch;
               if (l.lower == g) {
                 potentialBusinessMatch = l.higher;
@@ -1721,12 +1721,13 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
                 //l.higher == g
                 potentialBusinessMatch = l.lower;
               }
-              //testing that potentialBusinessMatch was not already a businessMatch
+
               if (!isOneOf(potentialBusinessMatch, businessMatches)) {
+                //testing that potentialBusinessMatch was not already a businessMatch
                 potentialNewBusinessMatches.push(potentialBusinessMatch);
               }
-            } 
-                    }
+            }
+          }
 
         });
       });
@@ -1735,55 +1736,68 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
       newBusinessMatchesFound = potentialNewBusinessMatches;
     }
 
-    //not downgrading rib matches which are in the same IF as a business match
-    newFilteredFiles.forEach((file) => {
-      var groupsToDowngrade = [];
-      var groupsWithoutPurpose = [];
+    //so now we have a list of all matches connected through a white link to any initial business match
+    //let's complete the set with all matches connected through a red link only to any of those extended
+    //matches
 
-      file.groups.forEach((group) => {
-        //console.log('checking group '+group.IGID);
-        var isBusinessMatch = isOneOf(group.IGID, businessMatches);
-        if (!isBusinessMatch && group.informationLevel == 'rib') {
+    var redLinksMatches = [];
+    var newRedLinksMatches = businessMatches;
+    var firstRun = true;
+    while (newRedLinksMatches.length > 0) {
+      //each loop we'll fill in the new found matches in potentialNewBusinessMatches and replace newBusinessMatchesFound with it at the end
+      var potentialNewRedLinkMatches = [];
+      newRedLinksMatches.forEach((g) => {
+        allLinks.forEach((l) => {
+          if (l.lower == g || l.higher == g) {
 
-          var highestPurpose = null;
+            if (l.colour == 'WL' || l.colour == 'MRL' || l.colour == 'NMRL') {
+              var potentialRedLinkMatch;
+              if (l.lower == g) {
+                potentialRedLinkMatch= l.higher;
+              } else {
+                //l.higher == g
+                potentialRedLinkMatch= l.lower;
+              }
 
-          allLinks.forEach((l) => {
-            if (l.lower == group.IGID || l.higher == group.IGID) {
-              if (l.colour == 'WL') {
-                highestPurpose = 'white';
-              } else if (highestPurpose != 'white' && (l.colour == 'MRL' || l.colour == 'NMRL')) {
-                highestPurpose = 'red';
+              if (!isOneOf(potentialRedLinkMatch, businessMatches) &&
+               !isOneOf(potentialRedLinkMatch, redLinksMatches)) {
+                //testing that potentialBusinessMatch was not already a businessMatch
+                  potentialNewRedLinkMatches.push(potentialRedLinkMatch);
               }
             }
-
-          });
-          if (highestPurpose == 'red') {
-            groupsToDowngrade.push(group);
-          } else if (highestPurpose == null) {
-            groupsWithoutPurpose.push(group);
           }
+        });
+      });
+
+      if (firstRun) {
+        //we seeded the run with the business matches, not retaining them as red link matches 
+        firstRun = false;
+        redLinksMatches = potentialNewRedLinkMatches;
+      } else {
+        redLinksMatches.push(...potentialNewRedLinkMatches);
+      }
+      newRedLinksMatches= potentialNewRedLinkMatches;
+    }
+
+
+    newFilteredFiles.forEach((file) => {
+      file.groups.forEach((group) => {
+        if(isOneOf(group.IGID, redLinksMatches)) {
+            if ( group.informationLevel == 'rib') {
+              console.log('group ' + group.IGID + ' information level downgraded from rib to ri due to ' +
+                'lack of direct business (WL) connection to a direct match');
+              group.informationLevel = 'ri';
+            }
+        } else if (!isOneOf(group.IGID, businessMatches) && (group.informationLevel == 'rib' || group.informationLevel == 'ri')) {
+          console.log('group ' + group.IGID + ' information level downgraded from '+group.informationLevel+' to r due to ' +
+            'lack of direct purpose');
+          group.informationLevel = 'r';
         }
       });
-
-      groupsToDowngrade.forEach((group) => {
-        console.log('group ' + group.IGID + ' information level downgraded from rib to ri due to ' +
-          'lack of direct business (WL) connection to a direct match');
-        group.informationLevel = 'ri';
-      });
-      groupsWithoutPurpose.forEach((group) => {
-        console.log('group ' + group.IGID + ' information level downgraded from rib to r due to ' +
-          'lack of purpose');
-        group.informationLevel = 'r';
-      });
-
     });
 
 
-    /*
-    if (matchesWithoutPurpose.length > 0) {
-      console.log('found matches without purposes, downgrading to r the following: '+tojson(matchesWithoutPurpose));
-    }
-    */
+
   }
 
   this.fetchGroups = function (systemsForCIRQuery, groupsForCIRQuery) {
