@@ -1577,7 +1577,7 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
 
             graphThis = true;
             //only return identity data for the 2 original groups
-            filteredFiles = cmd.getFilesFromLinks([link], "direct", "ri");
+            filteredFiles = cmd.getFilesFromLinks([link], "direct", (g) => "ri");
             links = [link];
           } else {
             //querytype == 'R2'
