@@ -781,14 +781,9 @@ function CMDSystem(
   this.followLinksAlpha = function (
     directMatchesToConsider,
   ) {
-    const matchesAndLinksLeadingToThisPoint = {
-      matches: [],
-      links: [],
-    };
 
-    const onlyTheStartingGroups = directMatchesToConsider.map((osp) => osp.IGID);
     const newDirectMatchesAndLinks = { 
-        groups: onlyTheStartingGroups,
+        groups: directMatchesToConsider.map((osp) => osp.IGID),
         links: []
         };
 
@@ -799,7 +794,7 @@ function CMDSystem(
       }
     }
 
-    //fetch green links considering newDirectMatches[].IGID and onlyTheStartingGroup together
+    //fetch all non yellow links considering directMatches[].IGID and 
     links.forEach((link) => {
       //for all green links
       if (link.colour == "GL" ||  link.colour == "MRL" || link.colour == "NMRL" || link.colour == "WL") {
@@ -834,6 +829,7 @@ function CMDSystem(
       links: Array.from(new Set(newDirectMatchesAndLinks.links).values()),
     };
   };
+
   this.followLinks = function (
     directMatchesToConsider,
     systemsToWhichAccessIsGranted,
@@ -1962,12 +1958,11 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph, linksAlphaQueryGraph)
       //building structure from results for graphing purposes
       const links = cmd.getLinks(linksToReturn.links);
 
-      //merging 3 structures while choosing purpose of returning information
       const filteredFiles = 
         cmd.getFilesFromGroups(
           directMatchesToConsider.map((g) => g.IGID),
           "direct",
-          (g) => "rib",
+          (g) => "ri",
         );
 
       linksAlphaQueryGraph.graphThis(
