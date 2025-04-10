@@ -152,6 +152,7 @@ function CMDSystem(
   systemsForMIDQuery,
   systemsForCIRQuery,
   groupsForCIRQuery,
+  groupsForMIDQuery,
 ) {
   //data structure
   var nextSystemID = 0;
@@ -223,6 +224,7 @@ function CMDSystem(
       regraph();
       reflectStateInURL();
       refreshGroupsListForCIRQuery();
+      refreshGroupsListForMIDAlphaQuery();
     }
   };
 
@@ -283,24 +285,33 @@ function CMDSystem(
   };
 
   var refreshGroupsListForCIRQuery = function () {
-    const span = idget("directMatchesGroups");
+    refreshGroupsLists("directMatchesGroups", groupsForCIRQuery, (EUISID) => {return systemsForCIRQuery.values().has(EUISID);});
+  };
+  /*
+  var refreshGroupsListForMIDAlphaQuery = function () {
+    refreshGroupsLists("alphaMatchesGroups", groupsForMIDQuery);
+  };
+  */
+
+  var refreshGroupsLists= function (name, selectedValues, isSystemRelevant) {
+    const span = idget(name);
     span.innerHTML = "";
-    //groupsForCIRQuery.reset();
 
     files.forEach(function (file) {
       file.groups.forEach(function (group) {
-        if (systemsForCIRQuery.values().has(group.EUISID)) {
-          var htmlGroupId = "CIRDirectMatchGroup." + group.IGID;
+        //if (systemsForCIRQuery.values().has(group.EUISID)) {
+        if (isSystemRelevant(group.EUISID)) {
+          var htmlGroupId = name+"." + group.IGID;
           var option = document.createElement("input");
           option.type = "checkbox";
           option.className = "btn-check";
           option.id = htmlGroupId;
           option.autocomplete = "off";
-          if (groupsForCIRQuery.values().has(group.IGID)) {
+          if (selectedValues.values().has(group.IGID)) {
             option.checked = true;
           }
           option.onclick = function () {
-            groupsForCIRQuery.toggle(group.IGID);
+            selectedValues.toggle(group.IGID);
           };
 
           var label = document.createElement("label");
@@ -384,6 +395,7 @@ function CMDSystem(
   var refreshSystemsLists = function () {
     refreshSystemsListForShow();
     refreshSystemsListForMIDQuery();
+    refreshGroupsListForMIDAlphaQuery();
     refreshSystemsListForCIRQuery();
   };
 
@@ -411,6 +423,11 @@ function CMDSystem(
       systemsForMIDQuery,
       false,
     );
+  };
+
+  var refreshGroupsListForMIDAlphaQuery= function () {
+    refreshGroupsLists("alphaMatchesGroups", groupsForMIDQuery, (EUISID) => {return true;});
+    //refreshGroupsLists("alphaMatchesGroups", groupsForMIDQuery);
   };
 
   var refreshSystemsListForCIRQuery = function () {
@@ -692,6 +709,7 @@ function CMDSystem(
       systemsForMIDQuery.reset();
       systemsForCIRQuery.reset();
       groupsForCIRQuery.reset();
+      groupsForMIDQuery.reset();
       files = state.files;
       systems = state.systems;
       links = state.links;
@@ -760,6 +778,62 @@ function CMDSystem(
     return groupAndIFID(groupID).group;
   };
 
+  this.followLinksAlpha = function (
+    directMatchesToConsider,
+  ) {
+    const matchesAndLinksLeadingToThisPoint = {
+      matches: [],
+      links: [],
+    };
+
+    const onlyTheStartingGroups = directMatchesToConsider.map((osp) => osp.IGID);
+    const newDirectMatchesAndLinks = { 
+        groups: onlyTheStartingGroups,
+        links: []
+        };
+
+    var heavyLogs = true;
+    function hlog(stuff) {
+      if (heavyLogs) {
+        console.log("alpha> " + stuff);
+      }
+    }
+
+    //fetch green links considering newDirectMatches[].IGID and onlyTheStartingGroup together
+    links.forEach((link) => {
+      //for all green links
+      if (link.colour == "GL" ||  link.colour == "MRL" || link.colour == "NMRL" || link.colour == "WL") {
+        //between two of the groups we are returning as direct match
+        hlog("considering link " + link.ID);
+        newDirectMatchesAndLinks.groups.forEach((oneEnd) => {
+          if (link.lower == oneEnd || link.higher == oneEnd) {
+            newDirectMatchesAndLinks.groups.forEach((otherEnd) => {
+              if (
+                otherEnd != oneEnd &&
+                (link.lower == otherEnd || link.higher == otherEnd)
+              ) {
+                hlog(
+                  "link " +
+                    link.ID +
+                    " exist between two linked matches " +
+                    oneEnd +
+                    " and " +
+                    otherEnd,
+                );
+                //were both ends 'matches', valid for green links? either they were direct matches or a white link connecting to them is returned.
+                  newDirectMatchesAndLinks.links.push(link.ID);
+              }
+            });
+          }
+        });
+      }
+    });
+
+    return {
+      groups: Array.from(new Set(newDirectMatchesAndLinks.groups).values()),
+      links: Array.from(new Set(newDirectMatchesAndLinks.links).values()),
+    };
+  };
   this.followLinks = function (
     directMatchesToConsider,
     systemsToWhichAccessIsGranted,
@@ -1407,7 +1481,7 @@ function CMDSystem(
   };
 }
 
-function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
+function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph, linksAlphaQueryGraph) {
 
   this.fetchLink = function (systemsForMIDQuery) {
     linksQueryGraph.reset();
@@ -1860,6 +1934,52 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
     cirMotivateResponseWith(motivations);
   };
 
+  this.fetchAlphaLinks= function (groupsForMIDQuery) {
+    linksAlphaQueryGraph.reset();
+
+
+    var motivations = [];
+    //exclude from direct matches the groups for which the system is not toggled as those groups
+    //are not visible as selected on the UI but their statue remains thus in the groupsForCIRQuery construct
+    var directMatchesToConsider = [];
+
+    groupsForMIDQuery.array().forEach(function (selectedGroup) {
+      const group = cmd.getGroup(selectedGroup);
+        directMatchesToConsider.push(group);
+    });
+
+    if (directMatchesToConsider.length > 0) {
+
+      const linksToReturn = cmd.followLinksAlpha(
+        directMatchesToConsider.map((g) => {return {IGID: g.IGID, identityDataReturned: true}}),
+      );
+
+      cirRespondWith({
+        links: linksToReturn,
+        directMatches: directMatchesToConsider,
+      });
+
+      //building structure from results for graphing purposes
+      const links = cmd.getLinks(linksToReturn.links);
+
+      //merging 3 structures while choosing purpose of returning information
+      const filteredFiles = 
+        cmd.getFilesFromGroups(
+          directMatchesToConsider.map((g) => g.IGID),
+          "direct",
+          (g) => "rib",
+        );
+
+      linksAlphaQueryGraph.graphThis(
+        linksAlphaQueryGraph.buildGraphData(filteredFiles, links),
+      );
+    } else {
+      motivations.push("you didn't select a group");
+      midAlphaRespondWith("no results found");
+    }
+    midAlphaMotivateResponseWith(motivations);
+  };
+
 
   var midRespondWith = function (value) {
     respondWith(value, "MIDQueryResult");
@@ -1869,6 +1989,12 @@ function ESPSystem(cmd, linksQueryGraph, groupsQueryGraph) {
   };
   var cirRespondWith = function (value) {
     respondWith(value, "CIRQueryResult");
+  };
+  var midAlphaRespondWith = function (value) {
+    respondWith(value, "MIDAlphaQueryResult");
+  };
+  var midAlphaMotivateResponseWith = function (motivations) {
+    motivateResponseWith(motivations, "MIDAlphaQueryMotivations");
   };
   var cirMotivateResponseWith = function (motivations) {
     motivateResponseWith(motivations, "CIRQueryMotivations");
@@ -2012,16 +2138,19 @@ function StorageSystem(cmd) {
 var stateGraph = new D3ForceGraph("graph-container", 3, 2);
 var linksQueryGraph = new D3ForceGraph("links-query-graph-container", 2, 3);
 var groupsQueryGraph = new D3ForceGraph("groups-query-graph-container", 2, 3);
+var linksAlphaQueryGraph = new D3ForceGraph("links-alpha-query-graph-container", 2, 3);
 var systemsForMIDQuery = new SelectedValues("MIDsystems");
 var systemsForCIRQuery = new SelectedValues("CIRsystems");
 var groupsForCIRQuery = new SelectedValues("CIRgroups");
+var groupsForMIDQuery = new SelectedValues("MIDgroups");
 var cmd = new CMDSystem(
   stateGraph,
   systemsForMIDQuery,
   systemsForCIRQuery,
   groupsForCIRQuery,
+  groupsForMIDQuery
 );
-var esp = new ESPSystem(cmd, linksQueryGraph, groupsQueryGraph);
+var esp = new ESPSystem(cmd, linksQueryGraph, groupsQueryGraph, linksAlphaQueryGraph);
 var storage = new StorageSystem(cmd);
 
 storage.refreshStatesList("selectedSavedState");
@@ -2059,8 +2188,13 @@ doOnClick("addLinkButton", function () {
 doOnClick("LMFquery", function () {
   esp.fetchLink(systemsForMIDQuery);
 });
+
 doOnClick("DMFquery", function () {
   esp.fetchGroups(systemsForCIRQuery, groupsForCIRQuery);
+});
+
+doOnClick("LMFAlphaquery", function () {
+  esp.fetchAlphaLinks( groupsForMIDQuery);
 });
 doOnClick("importLoadedState", function () {
   storage.importAsCurrent();
